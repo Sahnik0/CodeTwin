@@ -1,0 +1,82 @@
+---
+title: Getting Started
+---
+
+# Getting Started
+
+DevTwin is a terminal-first AI coding agent that runs on your machine. This guide walks you through installation, initialization, and your first task.
+
+## Installation
+
+Install DevTwin globally via npm or the shell installer:
+
+```bash
+curl -fsSL https://devtwin.dev/install.sh | bash
+```
+
+Or with npm:
+
+```bash
+npm install -g devtwin
+```
+
+After installation, verify with:
+
+```bash
+devtwin --version
+```
+
+## Init wizard
+
+Inside your project directory, run the initialization wizard:
+
+```bash
+cd your-project
+devtwin config init
+```
+
+The wizard will prompt you for:
+
+- **LLM provider** — choose from OpenAI, Anthropic, Groq, Gemini, Mistral, Ollama, Azure, and others
+- **Model** — the specific model to use for that provider
+- **API key** — stored locally in `~/.devtwin/config.json`, never uploaded
+- **Dependence level** — how autonomous the agent should be (1–5, default 3)
+
+Config is written to `.devtwin/config.json` in your project root. You can edit it directly at any time.
+
+## First task
+
+Start the DevTwin TUI:
+
+```bash
+devtwin start
+```
+
+This opens the interactive terminal UI. Type a task in natural language:
+
+```
+refactor auth module to use JWT
+```
+
+DevTwin will:
+
+1. Analyze the codebase
+2. Build a pre-flight impact map
+3. Show you exactly what will change
+4. Ask for approval (depending on your dependence level)
+5. Execute and record the decision to twin memory
+
+## Project configuration
+
+The `.devtwin/config.json` file controls per-project settings:
+
+```json
+{
+  "llmProvider": "anthropic",
+  "model": "claude-opus-4-5",
+  "apiKey": "sk-...",
+  "dependenceLevel": 3
+}
+```
+
+Global defaults live in `~/.devtwin/config.json`. Project config overrides global.

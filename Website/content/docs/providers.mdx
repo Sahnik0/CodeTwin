@@ -1,0 +1,105 @@
+---
+title: Providers
+---
+
+# Providers
+
+DevTwin supports every major LLM provider through a unified config interface. Change the provider and model with no code changes.
+
+## Configuration
+
+Set your provider in `.devtwin/config.json`:
+
+```json
+{
+  "llmProvider": "groq",
+  "model": "llama-3.3-70b-versatile",
+  "apiKey": "gsk_..."
+}
+```
+
+## OpenAI
+
+```json
+{
+  "llmProvider": "openai",
+  "model": "gpt-4o",
+  "apiKey": "sk-..."
+}
+```
+
+Supported models: `gpt-4o`, `gpt-4o-mini`, `gpt-4-turbo`, `o1`, `o3-mini`
+
+## Anthropic
+
+```json
+{
+  "llmProvider": "anthropic",
+  "model": "claude-opus-4-5",
+  "apiKey": "sk-ant-..."
+}
+```
+
+Supported models: `claude-opus-4-5`, `claude-sonnet-4-5`, `claude-haiku-3-5`
+
+## Groq
+
+```json
+{
+  "llmProvider": "groq",
+  "model": "llama-3.3-70b-versatile",
+  "apiKey": "gsk_..."
+}
+```
+
+Groq runs inference at high speed. Recommended for development iteration loops. Supported models: `llama-3.3-70b-versatile`, `mixtral-8x7b-32768`, `gemma2-9b-it`
+
+## Google Gemini
+
+```json
+{
+  "llmProvider": "gemini",
+  "model": "gemini-2.0-flash",
+  "apiKey": "AIza..."
+}
+```
+
+## Ollama (local)
+
+Run models locally with no API key required:
+
+```json
+{
+  "llmProvider": "ollama",
+  "model": "llama3.2",
+  "baseUrl": "http://localhost:11434"
+}
+```
+
+Start Ollama before running DevTwin: `ollama serve`
+
+## Azure OpenAI
+
+```json
+{
+  "llmProvider": "azure",
+  "model": "gpt-4o",
+  "apiKey": "...",
+  "azureEndpoint": "https://your-resource.openai.azure.com",
+  "azureDeployment": "your-deployment-name",
+  "azureApiVersion": "2024-02-01"
+}
+```
+
+## Others
+
+Any provider with an OpenAI-compatible API can be configured using the `openai-compatible` provider type:
+
+```json
+{
+  "llmProvider": "openai-compatible",
+  "model": "your-model",
+  "apiKey": "...",
+  "baseUrl": "https://your-api-endpoint.com/v1"
+}
+```

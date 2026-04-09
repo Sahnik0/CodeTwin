@@ -1,0 +1,103 @@
+---
+title: CLI Reference
+---
+
+# CLI Reference
+
+## devtwin start
+
+Start the interactive TUI.
+
+```bash
+devtwin start [--daemon] [--level <1-5>]
+```
+
+Options:
+- `--daemon` — also start the background daemon for remote control
+- `--level` — override the configured dependence level for this session
+
+## devtwin task
+
+Run a single task non-interactively.
+
+```bash
+devtwin task "<description>" [--level <1-5>] [--yes]
+```
+
+- `--yes` — auto-approve all pre-flight maps (equivalent to level 5 for this task)
+
+## devtwin config init
+
+Run the interactive configuration wizard.
+
+```bash
+devtwin config init
+```
+
+## devtwin config show
+
+Print the current effective configuration (project + global merged).
+
+```bash
+devtwin config show
+```
+
+## devtwin level
+
+Change the dependence level for the current project.
+
+```bash
+devtwin level <1-5>
+```
+
+## devtwin memory show
+
+Display the twin memory profile for the current project.
+
+```bash
+devtwin memory show
+```
+
+## devtwin memory reset
+
+Clear all twin memory for the current project.
+
+```bash
+devtwin memory reset [--yes]
+```
+
+## devtwin connect
+
+Show the device ID and QR code for mobile pairing. Starts the daemon if not running.
+
+```bash
+devtwin connect
+```
+
+## devtwin relay
+
+Start a standalone relay server.
+
+```bash
+devtwin relay [--port <port>]
+```
+
+Default port: 7484.
+
+## devtwin version
+
+Print the installed version.
+
+```bash
+devtwin version
+# or
+devtwin --version
+```
+
+## devtwin help
+
+Print the full help text.
+
+```bash
+devtwin help [command]
+```
