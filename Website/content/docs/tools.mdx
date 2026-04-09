@@ -1,0 +1,74 @@
+---
+title: Tools
+---
+
+# Tools
+
+DevTwin has a defined set of tools it uses to interact with your codebase. Each tool corresponds to a specific class of action. You see every tool invocation in the pre-flight map before it runs.
+
+## read
+
+Reads the content of a file. Never modifies anything.
+
+```
+read(path: string): string
+```
+
+Triggered when DevTwin needs to understand existing code. Silent at all dependence levels.
+
+## write
+
+Writes content to a file. Creates the file if it does not exist.
+
+```
+write(path: string, content: string): void
+```
+
+Always shown in the pre-flight map. At level 1 and 2, requires explicit approval before running.
+
+## edit
+
+Applies a targeted edit to an existing file: insert, replace, or delete a range of lines.
+
+```
+edit(path: string, range: LineRange, replacement: string): void
+```
+
+More surgical than `write` — DevTwin prefers `edit` when changing existing files to reduce blast radius.
+
+## bash
+
+Runs a shell command in the project directory.
+
+```
+bash(command: string, timeout?: number): ShellResult
+```
+
+Default timeout is 30 seconds. Commands that exceed this are terminated and reported as failures. Always shown in the pre-flight map. At level 1, requires approval.
+
+## git
+
+High-level git operations. Wraps `bash` with structured output parsing.
+
+```
+git.status(): GitStatus
+git.diff(path?: string): string
+git.commit(message: string): void
+git.push(remote?: string, branch?: string): void
+```
+
+`git.push` is treated as a destructive action at all levels — it always requires confirmation unless level 5 is set with an explicit delegation budget.
+
+## Custom tools
+
+You can define project-specific tools in `.devtwin/tools.json`. Custom tools are shell commands wrapped with a name and description. DevTwin will use them when the task matches the described capability.
+
+```json
+[
+  {
+    "name": "test",
+    "description": "Run the test suite",
+    "command": "pnpm test"
+  }
+]
+```

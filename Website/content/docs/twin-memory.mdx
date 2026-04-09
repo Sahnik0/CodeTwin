@@ -1,0 +1,65 @@
+---
+title: Twin Memory
+---
+
+# Twin Memory
+
+DevTwin maintains a twin profile per project. It is stored locally in a SQLite database at `.devtwin/memory.db`. Nothing is sent to any remote server.
+
+## What gets stored
+
+### Decisions
+
+Every time DevTwin makes a significant architectural or implementation choice — or you override one — it records:
+
+- What was chosen
+- What the alternatives were
+- The reason (if provided or inferred)
+- The timestamp
+
+### Constraints
+
+Active constraints are rules DevTwin must respect in all future tasks:
+
+- No specific library (`no lodash`)
+- Package manager preference (`use pnpm, not npm`)
+- Type safety rules (`no any types`)
+
+Add a constraint at any time:
+
+```
+/constraint "no lodash — tree-shaking issues"
+```
+
+### Failure patterns
+
+When a task fails or is rolled back, DevTwin records:
+
+- The operation that failed
+- The file or module involved
+- The error context
+- Whether it was a known or unknown failure
+
+This prevents the agent from repeating the same mistake in future sessions.
+
+## Viewing memory
+
+From the TUI, type `/memory` to view the current project's twin profile.
+
+From the CLI:
+
+```bash
+devtwin memory show
+```
+
+## Resetting memory
+
+```bash
+devtwin memory reset
+```
+
+This clears all decisions, constraints, and failure patterns for the current project. Irreversible.
+
+## Storage location
+
+Memory lives in `.devtwin/memory.db` relative to your project root. It is safe to commit to version control — it contains no secrets. Add it to `.gitignore` if you prefer not to share project memory with teammates.
