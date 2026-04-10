@@ -2,6 +2,8 @@
 import React, { useEffect } from 'react'
 import Lenis from 'lenis'
 
+export const LENIS_ACTIVATE_EVENT = 'codetwin:lenis-activate'
+
 export function SmoothScroll({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const lenis = new Lenis({
@@ -14,14 +16,23 @@ export function SmoothScroll({ children }: { children: React.ReactNode }) {
       touchMultiplier: 2,
     })
 
+    const handleActivate = () => {
+      lenis.start()
+    }
+    window.addEventListener(LENIS_ACTIVATE_EVENT, handleActivate)
+
+    let rafId = 0
+
     function raf(time: number) {
       lenis.raf(time)
-      requestAnimationFrame(raf)
+      rafId = requestAnimationFrame(raf)
     }
 
-    requestAnimationFrame(raf)
+    rafId = requestAnimationFrame(raf)
 
     return () => {
+      window.removeEventListener(LENIS_ACTIVATE_EVENT, handleActivate)
+      cancelAnimationFrame(rafId)
       lenis.destroy()
     }
   }, [])

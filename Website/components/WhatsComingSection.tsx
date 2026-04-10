@@ -1,8 +1,10 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { useEffect, useRef } from 'react'
+import { motion, useInView, useScroll, useSpring, useTransform } from 'framer-motion'
 import { Clock, Layers, Users, Cpu } from 'lucide-react'
 import SpotlightCard from './SpotlightCard'
+import { LENIS_ACTIVATE_EVENT } from './SmoothScroll'
 
 const upcomingFeatures = [
   {
@@ -40,8 +42,33 @@ const statusColors: Record<string, { bg: string; text: string; border: string }>
 const easeOut = [0.16, 1, 0.3, 1] as const
 
 export default function WhatsComingSection() {
+  const sectionRef = useRef<HTMLElement | null>(null)
+  const isInView = useInView(sectionRef, { margin: '-15% 0px -20% 0px' })
+
+  useEffect(() => {
+    if (!isInView) {
+      return
+    }
+
+    window.dispatchEvent(new CustomEvent(LENIS_ACTIVATE_EVENT))
+  }, [isInView])
+
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start end', 'end start'],
+  })
+
+  const smoothProgress = useSpring(scrollYProgress, {
+    stiffness: 85,
+    damping: 24,
+    mass: 0.35,
+  })
+
+  const cardsY = useTransform(smoothProgress, [0, 1], [14, -8])
+  const previewY = useTransform(smoothProgress, [0, 1], [20, -10])
+
   return (
-    <section className="py-28 px-6 bg-surface border-t border-border-default">
+    <section ref={sectionRef} className="py-28 px-6 bg-surface border-t border-border-default">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <motion.div
@@ -64,7 +91,7 @@ export default function WhatsComingSection() {
 
         <motion.div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-stretch mt-14">
           {/* Left — feature cards */}
-          <div className="flex flex-col gap-4">
+          <motion.div className="flex flex-col gap-4" style={{ y: cardsY }}>
             {upcomingFeatures.map((feature, i) => {
               const colors = statusColors[feature.status]
               return (
@@ -108,7 +135,7 @@ export default function WhatsComingSection() {
                 </motion.div>
               )
             })}
-          </div>
+          </motion.div>
 
           {/* Right — image placeholder */}
           <motion.div
@@ -118,9 +145,10 @@ export default function WhatsComingSection() {
             transition={{ duration: 0.5, delay: 0.2, ease: easeOut }}
             className="flex flex-col h-full items-stretch"
           >
-            <div
+            <motion.div
               className="rounded-xl border border-border-default bg-surface-elevated overflow-hidden flex flex-col flex-1 items-center justify-center gap-2"
               style={{
+                y: previewY,
                 boxShadow: '0 0 0 1px rgba(255,255,255,0.03) inset',
               }}
             >
@@ -130,7 +158,7 @@ export default function WhatsComingSection() {
               <span className="text-[11px] font-mono text-text-muted opacity-30 tracking-widest uppercase">
                 Preview Coming Soon
               </span>
-            </div>
+            </motion.div>
           </motion.div>
         </motion.div>
       </div>
