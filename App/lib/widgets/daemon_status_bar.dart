@@ -1,81 +1,101 @@
-/// Always-visible connection status banner at the top of every tab.
+/// Small connection status icon at the bottom right of the screen.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/session_status.dart';
 import '../providers/connection_provider.dart';
+import '../services/socket_service.dart';
 
-class DaemonStatusBar extends ConsumerWidget {
+class DaemonStatusBar extends ConsumerStatefulWidget {
   const DaemonStatusBar({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DaemonStatusBar> createState() => _DaemonStatusBarState();
+}
+
+class _DaemonStatusBarState extends ConsumerState<DaemonStatusBar>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _spinController;
+
+  @override
+  void initState() {
+    super.initState();
+    _spinController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    );
+  }
+
+  @override
+  void dispose() {
+    _spinController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final connAsync = ref.watch(connectionProvider);
     final conn = connAsync.valueOrNull ?? DaemonConnectionState.empty;
+    final isConnecting = conn.pairingStatus == PairingStatus.connecting;
 
-    if (conn.pairingStatus == PairingStatus.paired) {
-      return const SizedBox.shrink(); // Hide completely when connected!
+    if (isConnecting) {
+      if (!_spinController.isAnimating) {
+        _spinController.repeat();
+      }
+    } else {
+      if (_spinController.isAnimating) {
+        _spinController.stop();
+        _spinController.reset();
+      }
     }
 
-    final (Color color, IconData icon, String label) = switch (conn.pairingStatus) {
-      PairingStatus.paired => (
-          Colors.green,
-          Icons.check_circle_outline,
-          'Daemon online',
-        ),
-      PairingStatus.daemonOffline => (
-          Colors.amber,
-          Icons.cloud_off,
-          'Daemon offline — reconnecting',
-        ),
-      PairingStatus.connecting => (
-          Colors.blue,
-          Icons.sync,
-          'Connecting…',
-        ),
-      PairingStatus.unpaired => (
-          Colors.red,
-          Icons.link_off,
-          'Not paired',
-        ),
-    };
+    final Color color;
+    final IconData icon;
+
+    switch (conn.pairingStatus) {
+      case PairingStatus.paired:
+        color = Colors.greenAccent;
+        icon = Icons.wifi;
+        break;
+      case PairingStatus.connecting:
+        color = Colors.blueAccent;
+        icon = Icons.autorenew;
+        break;
+      default:
+        color = Colors.grey;
+        icon = Icons.wifi_off;
+        break;
+    }
 
     return SafeArea(
       child: GestureDetector(
         onTap: () {
-          // Navigate to settings if needed
+          // Tap to reconnect
+          if (conn.deviceId != null && conn.signalingUrl.isNotEmpty) {
+            SocketService().disconnect(); // Clear current
+            SocketService().connect(conn.signalingUrl, conn.deviceId!);
+          }
         },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Container(
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: color.withValues(alpha: 0.4), width: 1.5),
+            color: Theme.of(context).cardTheme.color?.withValues(alpha: 0.9),
+            shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
+                color: Colors.black.withValues(alpha: 0.3),
                 blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
+                spreadRadius: 1,
+              )
             ],
+            border: Border.all(
+              color: color.withValues(alpha: 0.5),
+              width: 1.5,
+            ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 16, color: color),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
+          padding: const EdgeInsets.all(12),
+          child: RotationTransition(
+            turns: isConnecting ? _spinController : const AlwaysStoppedAnimation(0),
+            child: Icon(icon, color: color, size: 24),
           ),
         ),
       ),

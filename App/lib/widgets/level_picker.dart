@@ -1,5 +1,3 @@
-/// 1–5 dependence level picker with descriptions.
-
 import 'package:flutter/material.dart';
 import '../constants/levels.dart';
 
@@ -18,97 +16,101 @@ class LevelPicker extends StatelessWidget {
     final theme = Theme.of(context);
     final info = getDependenceLevel(currentLevel);
     
-    const double tabWidth = 56.0;
     const double tabHeight = 44.0;
     const int totalLevels = 5;
 
-    final (Color glowColor, Color bgColor) = switch(currentLevel) {
-      1 => (Colors.greenAccent, Colors.green.withValues(alpha: 0.15)),
-      2 => (Colors.tealAccent, Colors.teal.withValues(alpha: 0.15)),
-      3 => (Colors.blueAccent, Colors.blue.withValues(alpha: 0.15)),
-      4 => (Colors.orangeAccent, Colors.orange.withValues(alpha: 0.15)),
-      5 => (Colors.redAccent, Colors.red.withValues(alpha: 0.15)),
-      _ => (theme.colorScheme.primary, theme.colorScheme.primary.withValues(alpha: 0.15)),
+    // Remove glow colors entirely. Use clean tasteful flat colors.
+    final Color bgColor = switch(currentLevel) {
+      1 => Colors.green.shade700,
+      2 => Colors.teal.shade600,
+      3 => Colors.blue.shade600,
+      4 => Colors.orange.shade700,
+      _ => Colors.red.shade700,
     };
 
     return Center(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            height: tabHeight,
-            width: tabWidth * totalLevels,
-            decoration: BoxDecoration(
-              color: const Color(0xFF16161A),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-            ),
-            child: Stack(
-              children: [
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 350),
-                  curve: Curves.fastOutSlowIn,
-                  left: (currentLevel - 1) * tabWidth,
-                  top: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: tabWidth,
-                    decoration: BoxDecoration(
-                      color: bgColor,
-                      borderRadius: BorderRadius.circular(22),
-                      border: Border.all(color: glowColor.withValues(alpha: 0.5), width: 1.5),
-                      boxShadow: [
-                        BoxShadow(
-                          color: glowColor.withValues(alpha: 0.15),
-                          blurRadius: 12,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                  ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // Ensure it doesn't overflow!
+              final maxAvailableWidth = constraints.maxWidth - 32; // 16 padding on each side
+              double calcWidth = maxAvailableWidth / totalLevels;
+              if (calcWidth > 56.0) calcWidth = 56.0; // limit max
+              final double tabWidth = calcWidth;
+
+              return Container(
+                height: tabHeight,
+                width: tabWidth * totalLevels,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1C1C21),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                 ),
-                Row(
-                  children: List.generate(totalLevels, (i) {
-                    final level = i + 1;
-                    final isSelected = currentLevel == level;
-                    return GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => onChanged(level),
-                      child: SizedBox(
+                child: Stack(
+                  children: [
+                    AnimatedPositioned(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.fastOutSlowIn,
+                      left: (currentLevel - 1) * tabWidth,
+                      top: 0,
+                      bottom: 0,
+                      child: Container(
                         width: tabWidth,
-                        height: tabHeight,
-                        child: Center(
-                          child: AnimatedDefaultTextStyle(
-                            duration: const Duration(milliseconds: 200),
-                            style: TextStyle(
-                              fontSize: isSelected ? 18 : 15,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                              color: isSelected ? glowColor : Colors.white.withValues(alpha: 0.4),
-                            ),
-                            child: Text('$level'),
-                          ),
+                        decoration: BoxDecoration(
+                          color: bgColor,
+                          borderRadius: BorderRadius.circular(22),
                         ),
                       ),
-                    );
-                  }),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            transitionBuilder: (child, animation) {
-              return FadeTransition(
-                opacity: animation,
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0.0, 0.2),
-                    end: Offset.zero,
-                  ).animate(animation),
-                  child: child,
+                    ),
+                    Row(
+                      children: List.generate(totalLevels, (i) {
+                        final level = i + 1;
+                        final isSelected = currentLevel == level;
+                        return GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => onChanged(level),
+                          child: SizedBox(
+                            width: tabWidth,
+                            height: tabHeight,
+                            child: Center(
+                              child: AnimatedDefaultTextStyle(
+                                duration: const Duration(milliseconds: 200),
+                                style: TextStyle(
+                                  fontSize: isSelected ? 16 : 15,
+                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                  color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.5),
+                                ),
+                                child: Text('$level'),
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ],
                 ),
               );
+            }
+          ),
+          const SizedBox(height: 16),
+          // Fix text overlap using custom layoutbuilder and fast transition
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 150),
+            reverseDuration: const Duration(milliseconds: 100),
+            layoutBuilder: (currentChild, previousChildren) {
+              // This guarantees only one renders in stack or centers properly
+              return Stack(
+                alignment: Alignment.topCenter,
+                children: <Widget>[
+                  ...previousChildren,
+                  if (currentChild != null) currentChild,
+                ],
+              );
+            },
+            transitionBuilder: (child, animation) {
+              return FadeTransition(opacity: animation, child: child);
             },
             child: Column(
               key: ValueKey<int>(currentLevel),
@@ -117,10 +119,10 @@ class LevelPicker extends StatelessWidget {
                 Text(
                   info.name.toUpperCase(),
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.titleSmall?.copyWith(
+                  style: theme.textTheme.labelLarge?.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: 2.0,
-                    color: glowColor,
+                    color: bgColor,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -128,7 +130,7 @@ class LevelPicker extends StatelessWidget {
                   info.description,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                     height: 1.4,
                   ),
                 ),
@@ -140,4 +142,3 @@ class LevelPicker extends StatelessWidget {
     );
   }
 }
-
