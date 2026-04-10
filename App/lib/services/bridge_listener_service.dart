@@ -8,7 +8,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/socket_service.dart';
 import '../models/bridge_event.dart';
+import '../models/log_entry.dart';
+import '../models/session_status.dart';
 import '../providers/connection_provider.dart';
+import '../providers/session_provider.dart';
 
 final bridgeListenerProvider = Provider.autoDispose<void>((ref) {
   // Keep this provider alive for the full app session so callbacks
@@ -33,16 +36,36 @@ final bridgeListenerProvider = Provider.autoDispose<void>((ref) {
   };
 
   final cancelBridgeListener = socket.onBridgeEvent((event) {
-    final notifier = ref.read(connectionProvider.notifier);
+    final connNotifier = ref.read(connectionProvider.notifier);
+    final sessionNotifier = ref.read(sessionProvider.notifier);
     switch (event.type) {
       case BridgeEventType.ready:
       case BridgeEventType.subscribed:
-        notifier
+        connNotifier
           ..setAppConnected(true)
           ..setDaemonConnected(true);
 
+      case BridgeEventType.accepted:
+      case BridgeEventType.start:
+        sessionNotifier.setStatus(SessionStatus.running);
+
+      case BridgeEventType.stdout:
+      case BridgeEventType.stderr:
+        final text = event.text ?? '';
+        if (text.isNotEmpty) {
+          sessionNotifier.appendLog(LogEntry(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            level: event.type == BridgeEventType.stderr
+                ? AgentLogLevel.error
+                : AgentLogLevel.info,
+            message: text,
+            timestamp: DateTime.now().toIso8601String(),
+          ));
+        }
+
       case BridgeEventType.exit:
-        notifier.setLastPongAt(DateTime.now().toIso8601String());
+        sessionNotifier.setStatus(SessionStatus.idle);
+        connNotifier.setLastPongAt(DateTime.now().toIso8601String());
 
       case BridgeEventType.error:
         final msg = event.message ?? '';
@@ -50,8 +73,9 @@ final bridgeListenerProvider = Provider.autoDispose<void>((ref) {
         if (msg.contains('401') ||
             msg.contains('Unauthorized') ||
             msg.contains('expired')) {
-          notifier.markTokenExpired();
+          connNotifier.markTokenExpired();
         }
+        sessionNotifier.setStatus(SessionStatus.failed);
 
       default:
         break;

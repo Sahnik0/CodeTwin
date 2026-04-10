@@ -172,12 +172,16 @@ class DashboardScreen extends ConsumerWidget {
                       ),
 
                       // ── Chat log fills remaining space ───────────────────
-                      if (session.logs.isNotEmpty &&
+                      if (session.logs.any((l) => l.level != AgentLogLevel.error) &&
                           session.preflightQueue.isEmpty &&
                           session.decisionQueue.isEmpty)
                         SliverFillRemaining(
                           hasScrollBody: true,
-                          child: ChatMessageList(logs: session.logs),
+                          child: ChatMessageList(
+                            logs: session.logs
+                                .where((l) => l.level != AgentLogLevel.error)
+                                .toList(),
+                          ),
                         ),
 
                       // Bottom padding so chat doesn't touch the start of the bar
