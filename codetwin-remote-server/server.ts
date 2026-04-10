@@ -597,6 +597,11 @@ function handleWorkerEvent(socket: ServerWebSocket<WsData>, body: any) {
   const workerId = socket.data.workerId
   if (!workerId) return
 
+  if (body?.type === "ping") {
+    socket.send(JSON.stringify({ type: "pong", ts: now() }))
+    return
+  }
+
   const { type, jobId } = body
   if (!jobId) return
 

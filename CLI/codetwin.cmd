@@ -37,14 +37,14 @@ if not exist "%APP%\node_modules\" (
 )
 
 if "%~1"=="worker" (
-  "%BUN%" run --cwd "%APP%" dev worker --codetwin-bin "%ROOT%\codetwin.cmd" %2 %3 %4 %5 %6 %7 %8 %9
+  "%BUN%" run --use-system-ca --cwd "%APP%" dev worker --codetwin-bin "%ROOT%\codetwin.cmd" %2 %3 %4 %5 %6 %7 %8 %9
   exit /b %errorlevel%
 )
 
 if "%~1"=="" (
-  "%BUN%" run --cwd "%APP%" dev "%CD%"
+  "%BUN%" run --use-system-ca --cwd "%APP%" dev "%CD%"
   exit /b %errorlevel%
 )
 
-"%BUN%" run --cwd "%APP%" dev %*
+"%BUN%" run --use-system-ca --cwd "%APP%" dev %*
 exit /b %errorlevel%

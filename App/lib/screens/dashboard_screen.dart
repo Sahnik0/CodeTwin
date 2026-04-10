@@ -319,7 +319,10 @@ class _BottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cli = CliTheme.of(context);
-    final isIdle = session.status == SessionStatus.idle &&
+    // Show input when idle (no active task) OR after a failure (allow retry).
+    // When queues have items, those cards take over the bottom area.
+    final canInput = (session.status == SessionStatus.idle ||
+            session.status == SessionStatus.failed) &&
         session.preflightQueue.isEmpty &&
         session.decisionQueue.isEmpty;
 
@@ -333,7 +336,7 @@ class _BottomBar extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (isIdle) ...[
+          if (canInput) ...[
             // Terminal-style prompt row
             Padding(
               padding: const EdgeInsets.only(bottom: 6, left: 2),
@@ -345,6 +348,9 @@ class _BottomBar extends StatelessWidget {
                       style: cli.mono.copyWith(color: cli.textDim, fontSize: 10)),
                   Text(' % ',
                       style: cli.mono.copyWith(color: cli.accent, fontSize: 10)),
+                  if (session.status == SessionStatus.failed)
+                    Text(' (last task failed — try again)',
+                        style: cli.mono.copyWith(color: cli.amber, fontSize: 10)),
                 ],
               ),
             ),

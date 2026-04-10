@@ -48,6 +48,12 @@ class DaemonActions {
   // ── public API ───────────────────────────────────────────────────────────
 
   void submitTask(String task) {
+    // ── verbose debug trace ──────────────────────────────────────────────────
+    debugPrint('[DaemonActions] submitTask called: "$task"');
+    debugPrint('[DaemonActions] isConnected=${socketService.isConnected}');
+    debugPrint('[DaemonActions] activeJobId=${socketService.activeJobId}');
+    // ────────────────────────────────────────────────────────────────────────
+
     ref.read(sessionProvider.notifier).appendLog(LogEntry(
           id: 'user_input_${DateTime.now().millisecondsSinceEpoch}',
           timestamp: DateTime.now().toIso8601String(),
@@ -56,6 +62,7 @@ class DaemonActions {
         ));
 
     if (!isDaemonConnected) {
+      debugPrint('[DaemonActions] BLOCKED — daemon offline');
       ref.read(sessionProvider.notifier).appendLog(LogEntry(
             id: 'err_${DateTime.now().millisecondsSinceEpoch}',
             timestamp: DateTime.now().toIso8601String(),
@@ -64,11 +71,9 @@ class DaemonActions {
           ));
       return;
     }
+    debugPrint('[DaemonActions] SENDING cliExecute to bridge...');
     socketService.sendBridgeCommand({
       'type': 'cliExecute',
-      // run [message..] — task is a positional arg, NOT --task (flag doesn't exist)
-      // --dangerously-skip-permissions lets it run autonomously without stalling
-      // --dependence-level maps our UI level 1-5 to the CLI autonomy level
       'args': [
         'run',
         task,
@@ -78,6 +83,7 @@ class DaemonActions {
       ],
       'env': {'CODETWIN_DEPENDENCE_LEVEL': session.dependenceLevel.toString()},
     });
+    debugPrint('[DaemonActions] cliExecute sent ✓');
   }
 
   void cancelTask() {
