@@ -13,6 +13,10 @@ class DaemonStatusBar extends ConsumerWidget {
     final connAsync = ref.watch(connectionProvider);
     final conn = connAsync.valueOrNull ?? DaemonConnectionState.empty;
 
+    if (conn.pairingStatus == PairingStatus.paired) {
+      return const SizedBox.shrink(); // Hide completely when connected!
+    }
+
     final (Color color, IconData icon, String label) = switch (conn.pairingStatus) {
       PairingStatus.paired => (
           Colors.green,
@@ -22,7 +26,7 @@ class DaemonStatusBar extends ConsumerWidget {
       PairingStatus.daemonOffline => (
           Colors.amber,
           Icons.cloud_off,
-          'Daemon offline — waiting for reconnect',
+          'Daemon offline — reconnecting',
         ),
       PairingStatus.connecting => (
           Colors.blue,
@@ -36,41 +40,43 @@ class DaemonStatusBar extends ConsumerWidget {
         ),
     };
 
-    return GestureDetector(
-      onTap: () {
-        // Navigate to settings if needed
-      },
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
-          border: Border(bottom: BorderSide(color: color.withValues(alpha: 0.3))),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 16, color: color),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
+    return SafeArea(
+      child: GestureDetector(
+        onTap: () {
+          // Navigate to settings if needed
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: color.withValues(alpha: 0.4), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: color),
+              const SizedBox(width: 8),
+              Text(
                 label,
                 style: TextStyle(
                   color: color,
                   fontSize: 13,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
                 ),
               ),
-            ),
-            if (conn.deviceId != null)
-              Text(
-                conn.deviceId!.substring(0, 6),
-                style: TextStyle(
-                  color: color.withValues(alpha: 0.6),
-                  fontSize: 11,
-                  fontFamily: 'monospace',
-                ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

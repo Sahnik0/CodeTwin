@@ -19,10 +19,14 @@ class ShellScreen extends ConsumerWidget {
 
     return Scaffold(
       body: SafeArea(
-        child: Column(
+        child: Stack(
+          alignment: Alignment.topCenter,
           children: [
-            const DaemonStatusBar(),
-            Expanded(child: shell),
+            Positioned.fill(child: shell),
+            const Positioned(
+              top: 12,
+              child: DaemonStatusBar(),
+            ),
           ],
         ),
       ),
