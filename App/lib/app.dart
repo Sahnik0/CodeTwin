@@ -57,7 +57,10 @@ class _AppState extends ConsumerState<App> {
 
   @override
   Widget build(BuildContext context) {
-    final router = ref.watch(routerProvider);
+    // Use ref.read — the router handles its own redirect refreshes via
+    // _RouterRefreshNotifier. Watching would recreate GoRouter on every
+    // connectionProvider change, causing Duplicate GlobalKey crashes.
+    final router = ref.read(routerProvider);
 
     return MaterialApp.router(
       title: 'CodeTwin',

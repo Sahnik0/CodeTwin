@@ -1364,6 +1364,11 @@ const server = Bun.serve<WsData>({
           return
         }
 
+        if (body?.type === "ping") {
+          socket.send(JSON.stringify({ type: "pong", ts: now() }))
+          return
+        }
+
         socket.send(JSON.stringify({ type: "error", ts: now(), message: "Unsupported message type" }))
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)

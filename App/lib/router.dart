@@ -16,55 +16,50 @@ import 'screens/onboarding_screen.dart';
 import 'screens/modals/preflight_modal.dart';
 import 'screens/modals/decision_modal.dart';
 
-// Key for the shell navigator
-final _rootNavigatorKey = GlobalKey<NavigatorState>();
-final _shellNavigatorKey = GlobalKey<NavigatorState>();
+// Keys are static — created once, never recreated. This prevents the
+// "Duplicate GlobalKey" crash that occurs when routerProvider rebuilds
+// and creates a new GoRouter with new keys on each connectionProvider change.
+final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
+final _shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final connection = ref.watch(connectionProvider);
-  final isOnboarded = ref.watch(onboardingProvider);
+  // Use a Listenable so GoRouter re-evaluates redirect without being
+  // recreated as a new object (which would cause GlobalKey conflicts).
+  final notifier = _RouterRefreshNotifier(ref);
 
-  return GoRouter(
+  final router = GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/',
+    refreshListenable: notifier,
     redirect: (context, state) {
-      final connState = connection.valueOrNull;
+      final connState = ref.read(connectionProvider).valueOrNull;
+      final isOnboarded = ref.read(onboardingProvider);
       final isPaired = connState?.isPaired == true;
       final isTokenExpired =
           connState?.pairingStatus == PairingStatus.tokenExpired;
-      final isGoingToPairPage = state.matchedLocation == '/pair';
-      final isGoingToOnboarding = state.matchedLocation == '/onboarding';
+      final loc = state.matchedLocation;
 
-      if (!isOnboarded && !isGoingToOnboarding) return '/onboarding';
-      // Token expired → force re-pair
-      if (isTokenExpired && !isGoingToPairPage) return '/pair';
-      if (isOnboarded && !isPaired && !isGoingToPairPage) return '/pair';
-      if (isPaired && (isGoingToPairPage || isGoingToOnboarding)) {
+      if (!isOnboarded && loc != '/onboarding') return '/onboarding';
+      if (isTokenExpired && loc != '/pair') return '/pair';
+      if (isOnboarded && !isPaired && loc != '/pair') return '/pair';
+      if (isPaired && (loc == '/pair' || loc == '/onboarding')) {
         return '/dashboard';
       }
-
       return null;
     },
     routes: [
-      // Redirect root appropriately (redirect logic catches it, defaults to dashboard)
       GoRoute(
         path: '/',
         redirect: (_, __) => '/dashboard',
       ),
-
-      // Onboarding screen
       GoRoute(
         path: '/onboarding',
         builder: (_, __) => const OnboardingScreen(),
       ),
-
-      // Pairing screen (outside shell)
       GoRoute(
         path: '/pair',
         builder: (_, __) => const PairScreen(),
       ),
-
-      // Main app shell with bottom nav
       StatefulShellRoute(
         parentNavigatorKey: _rootNavigatorKey,
         navigatorContainerBuilder: (context, navigationShell, children) {
@@ -104,8 +99,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           ]),
         ],
       ),
-
-      // Modals (pushed above the shell)
       GoRoute(
         path: '/modals/preflight',
         parentNavigatorKey: _rootNavigatorKey,
@@ -122,4 +115,26 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+
+  ref.onDispose(notifier.dispose);
+  return router;
 });
+
+/// A [ChangeNotifier] that tells GoRouter to re-evaluate its redirect
+/// when pairing/onboarding state changes — without recreating the GoRouter.
+class _RouterRefreshNotifier extends ChangeNotifier {
+  _RouterRefreshNotifier(Ref ref) {
+    _sub1 = ref.listen(connectionProvider, (_, __) => notifyListeners());
+    _sub2 = ref.listen(onboardingProvider, (_, __) => notifyListeners());
+  }
+
+  late final ProviderSubscription _sub1;
+  late final ProviderSubscription _sub2;
+
+  @override
+  void dispose() {
+    _sub1.close();
+    _sub2.close();
+    super.dispose();
+  }
+}
