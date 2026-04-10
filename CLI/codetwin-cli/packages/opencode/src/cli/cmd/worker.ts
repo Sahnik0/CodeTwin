@@ -209,18 +209,35 @@ export const WorkerCommand = cmd({
         } else {
           const execArgs = normalizeArgs(msg.args)
           if (!execArgs.length) throw new Error("args must be a non-empty string array")
-          displayCommand = [codetwinBin, ...execArgs].join(" ")
-          displayArgs = execArgs
-          proc = spawn(codetwinBin, execArgs, {
+
+          // Standardize background execution: 
+          // 1. Bypass the .cmd wrapper which mangles quotes on Windows.
+          // 2. Use process.argv[0] (bun) and process.argv[1] (index.ts) directly.
+          // 3. Force --use-system-ca and --conditions=browser.
+          const entryPoint = process.argv[1]
+          const bunArgs = [
+            "run",
+            "--use-system-ca",
+            "--conditions=browser",
+            entryPoint,
+            ...execArgs,
+          ]
+
+          displayCommand = `${process.argv[0]} ${bunArgs.join(" ")}`
+          displayArgs = bunArgs
+
+          console.log(`[Worker] Executing job ${jobId}: ${displayCommand}`)
+          console.log(`[Worker] CWD: ${cwd}`)
+
+          proc = spawn(process.argv[0], bunArgs, {
             cwd,
             env,
             stdio: ["pipe", "pipe", "pipe"],
-            // On Windows, .cmd files must be launched via a shell
-            shell: process.platform === "win32",
             windowsHide: true,
           })
         }
       } catch (error) {
+        console.error(`[Worker] Spawn error for job ${jobId}:`, error)
         safeSend(ws, {
           type: "error",
           jobId,
@@ -230,12 +247,17 @@ export const WorkerCommand = cmd({
         return
       }
 
+      console.log(`[Worker] Job ${jobId} started (PID ${proc.pid})`)
+
       running.set(jobId, proc)
 
-      // Close stdin immediately so the spawned process receives EOF.
-      // run.ts does `Bun.stdin.text()` when stdin is not a TTY (pipe mode),
-      // which blocks forever unless stdin is closed.
-      proc.stdin?.end()
+      // Close stdin after a small delay to ensure the process has started
+      setTimeout(() => {
+        if (running.has(jobId)) {
+          console.log(`[Worker] Ending stdin for job ${jobId}`)
+          proc.stdin?.end()
+        }
+      }, 500)
 
       safeSend(ws, {
         type: "start",
@@ -249,21 +271,29 @@ export const WorkerCommand = cmd({
       })
 
       proc.stdout?.on("data", (chunk: Buffer | string) => {
+        const text = chunk.toString()
+        console.log(`[Worker] Job ${jobId} stdout: ${text.trim()}`)
         safeSend(ws, {
           type: "stdout",
           jobId,
           ts: Date.now(),
-          text: chunk.toString(),
+          text,
         })
       })
 
       proc.stderr?.on("data", (chunk: Buffer | string) => {
+        const text = chunk.toString()
+        console.log(`[Worker] Job ${jobId} stderr: ${text.trim()}`)
         safeSend(ws, {
           type: "stderr",
           jobId,
           ts: Date.now(),
-          text: chunk.toString(),
+          text,
         })
+      })
+
+      proc.on("error", (err) => {
+        console.error(`[Worker] Job ${jobId} process error:`, err)
       })
 
       proc.on("error", (error) => {
@@ -276,6 +306,7 @@ export const WorkerCommand = cmd({
       })
 
       proc.on("close", (code) => {
+        console.log(`[Worker] Job ${jobId} exited with code ${code}`)
         running.delete(jobId)
         safeSend(ws, {
           type: "exit",

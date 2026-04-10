@@ -575,12 +575,12 @@ function disconnectWorker(workerId: string) {
 function replayHistory(job: Job, send: (event: BridgeEvent) => void) {
   for (const line of job.logs) {
     const type = line.level === "stderr" ? "stderr" : "stdout"
-    send({
+    fanoutToClients({
       type,
       jobId: job.id,
       ts: line.ts,
       text: line.text,
-    })
+    }, job.pairingId)
   }
 
   if (job.status !== "running" && job.code !== null) {
@@ -662,6 +662,7 @@ function handleWorkerEvent(socket: ServerWebSocket<WsData>, body: any) {
     } else if (type === "stdout" || type === "stderr") {
       appendLog(jobId, type, body.text)
     } else if (type === "exit") {
+      console.log(`[Server] Job ${jobId} exited on worker ${workerId} with code ${body.code}`)
       job.code = body.code
       job.end = body.ts || now()
       job.status = body.code === 0 ? "done" : "error"
@@ -675,7 +676,7 @@ function handleWorkerEvent(socket: ServerWebSocket<WsData>, body: any) {
     }
   }
 
-  fanoutToClients(body as BridgeEvent)
+  fanoutToClients(body as BridgeEvent, job?.pairingId)
 }
 
 function createSse(req: Request, pairingId?: string, jobId?: string) {
@@ -855,6 +856,19 @@ function getSessionForPoll(body: any) {
   if (!safeEqualString(session.pollToken, pollToken)) throw new Error("Invalid polling token")
 
   return session
+}
+
+function fanoutToClients(payload: any, pairingId?: string) {
+  const text = JSON.stringify(payload)
+  let count = 0
+  for (const socket of clientWs) {
+    if (pairingId && socket.data.pairingId !== pairingId) continue
+    socket.send(text)
+    count++
+  }
+  if (payload.type === "stdout" || payload.type === "stderr") {
+    console.log(`[Server] Fanned out ${payload.type} for job ${payload.jobId} to ${count} clients (pairingId: ${pairingId})`)
+  }
 }
 
 function findJobForPairing(jobId: string, pairingId?: string) {
