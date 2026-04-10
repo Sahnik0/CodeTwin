@@ -29,7 +29,7 @@ const steps = [
   },
 ]
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useRef } from 'react'
 
 interface GitHubContributor {
   id: number
@@ -44,8 +44,13 @@ const easeOut = [0.16, 1, 0.3, 1] as const
 export default function GettingStartedSection() {
   const [contributors, setContributors] = useState<GitHubContributor[]>([])
 
+  const sectionRef = useRef<HTMLElement>(null);
+  
   const { scrollY } = useScroll();
-  const baseX = useTransform(scrollY, [0, 5000], [100, -1500]);
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start end", "end start"] });
+  
+  // Adjusted pixel offset delta to increase marquee speed per user request
+  const baseX = useTransform(scrollYProgress, [0, 1], [50, -2000]);
   const scrollVelocity = useVelocity(scrollY);
   const smoothVelocity = useSpring(scrollVelocity, { damping: 50, stiffness: 400 });
   const skewVelocity = useTransform(smoothVelocity, [-1000, 1000], [-8, 8]);
@@ -60,11 +65,11 @@ export default function GettingStartedSection() {
       .catch((err) => console.error('Failed to fetch contributors:', err))
   }, [])
   return (
-    <section className="relative py-28 px-6 border-t border-border-default overflow-hidden">
+    <section ref={sectionRef} className="relative py-28 px-6 border-t border-border-default overflow-hidden">
       {/* Massive Background Marquee */}
       <motion.div 
         style={{ x: baseX, skewX }}
-        className="absolute top-1/2 -translate-y-1/2 flex whitespace-nowrap pointer-events-none opacity-5 mix-blend-plus-lighter z-0"
+        className="absolute top-1/2 -translate-y-1/2 flex whitespace-nowrap pointer-events-none opacity-5 mix-blend-plus-lighter z-0 left-0"
       >
         <span className="text-[180px] md:text-[240px] font-black tracking-tighter uppercase text-[#a6a6ed]">
           Terminal First · Local First · Zero Telemetry · Terminal First · Local First · Zero Telemetry ·
