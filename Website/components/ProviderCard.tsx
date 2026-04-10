@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import SpotlightCard from './SpotlightCard'
 
 interface ProviderCardProps {
   name: string
@@ -18,7 +19,7 @@ export default function ProviderCard({
   color = '#7c3aed',
 }: ProviderCardProps) {
   return (
-    <div className="group flex flex-col gap-3 p-4 bg-surface border border-border-default rounded-lg hover:border-border-hover transition-colors duration-200">
+    <SpotlightCard className="group flex flex-col gap-3 !p-4 !bg-surface !border !border-border-default hover:!border-border-hover transition-colors duration-200" spotlightColor="rgba(166, 166, 237, 0.2)">
       {/* Icon or abbreviation circle */}
       <div
         className="w-9 h-9 rounded flex items-center justify-center text-xs font-mono font-medium text-white flex-shrink-0"
@@ -52,6 +53,6 @@ export default function ProviderCard({
           {model}
         </span>
       </div>
-    </div>
+    </SpotlightCard>
   )
 }

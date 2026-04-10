@@ -24,12 +24,22 @@ export default function NavBar() {
     >
       <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
         {/* Wordmark */}
-        <Link
-          href="/"
-          className="font-mono text-sm font-medium text-text-primary tracking-tight hover:text-[#2dd4bf] transition-colors"
-        >
-          CodeTwin
-        </Link>
+        <div className="hidden md:flex flex-1">
+          <Link
+            href="/"
+            className="font-mono text-sm font-medium text-text-primary tracking-tight hover:text-[#a6a6ed] transition-colors"
+          >
+            Code<span className="text-[#a6a6ed]">Twin</span>
+          </Link>
+        </div>
+        <div className="md:hidden">
+          <Link
+            href="/"
+            className="font-mono text-sm font-medium text-text-primary tracking-tight hover:text-[#a6a6ed] transition-colors"
+          >
+            Code<span className="text-[#a6a6ed]">Twin</span>
+          </Link>
+        </div>
 
         {/* Desktop nav — center */}
         <nav className="hidden md:flex items-center gap-6 text-sm">
@@ -63,19 +73,13 @@ export default function NavBar() {
           </a>
         </nav>
 
-        {/* Desktop nav — right CTA */}
-        <div className="hidden md:flex items-center gap-3">
+        {/* Desktop nav — right section */}
+        <div className="hidden md:flex flex-1 justify-end items-center gap-4">
           <Link
             href="/docs/getting-started"
-            className="text-xs text-text-secondary hover:text-text-primary transition-colors px-3 py-1.5 rounded border border-border-default hover:border-border-hover"
+            className="text-xs text-[#060010] bg-[#a6a6ed] hover:bg-[#9494e0] transition-colors h-8 px-4 flex items-center justify-center rounded font-semibold uppercase tracking-wider"
           >
-            Login
-          </Link>
-          <Link
-            href="/docs/getting-started"
-            className="text-xs text-background bg-[#2dd4bf] hover:bg-[#14b8a6] transition-colors px-3 py-1.5 rounded font-medium"
-          >
-            Sign Up
+            Get Started
           </Link>
         </div>
 
@@ -123,22 +127,7 @@ export default function NavBar() {
             <GitHubIcon size={15} />
             GitHub
           </a>
-          <div className="flex gap-3 pt-2 border-t border-border-default">
-            <Link
-              href="/docs/getting-started"
-              className="text-xs text-text-secondary hover:text-text-primary transition-colors px-3 py-1.5 rounded border border-border-default hover:border-border-hover"
-              onClick={() => setOpen(false)}
-            >
-              Login
-            </Link>
-            <Link
-              href="/docs/getting-started"
-              className="text-xs text-background bg-[#2dd4bf] hover:bg-[#14b8a6] transition-colors px-3 py-1.5 rounded font-medium"
-              onClick={() => setOpen(false)}
-            >
-              Sign Up
-            </Link>
-          </div>
+
         </nav>
       )}
     </header>

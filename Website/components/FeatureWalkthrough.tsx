@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import CircuitPattern from './CircuitPattern'
+import BorderGlow from './BorderGlow'
 
 const features = [
   {
@@ -46,7 +47,7 @@ export default function FeatureWalkthrough() {
       <div className="max-w-6xl mx-auto">
         {/* Section heading */}
         <div className="text-center mb-20">
-          <p className="text-xs text-[#2dd4bf] uppercase tracking-[0.2em] font-mono mb-4">
+          <p className="text-xs text-[#a6a6ed] uppercase tracking-[0.2em] font-mono mb-4">
             How It Works
           </p>
           <h2 className="text-3xl md:text-4xl font-semibold text-text-primary leading-tight">
@@ -72,7 +73,7 @@ export default function FeatureWalkthrough() {
               >
                 {/* Text content */}
                 <div className={`flex flex-col ${feature.imagePosition === 'left' ? 'lg:order-2' : 'lg:order-1'}`}>
-                  <span className="text-xs text-[#2dd4bf] uppercase tracking-[0.2em] font-mono mb-4">
+                  <span className="text-xs text-[#a6a6ed] uppercase tracking-[0.2em] font-mono mb-4">
                     {feature.label}
                   </span>
                   <h3 className="text-xl md:text-2xl font-medium text-text-primary mb-4 leading-snug">
@@ -85,16 +86,25 @@ export default function FeatureWalkthrough() {
 
                 {/* Image placeholder */}
                 <div className={`relative ${feature.imagePosition === 'left' ? 'lg:order-1' : 'lg:order-2'}`}>
-                  <div className="relative rounded-lg border border-border-default bg-surface-elevated overflow-hidden aspect-[16/10]">
-                    {/* Empty image placeholder */}
-                    <div className="absolute inset-0 flex items-center justify-center">
+                  <BorderGlow
+                    edgeSensitivity={40}
+                    glowColor="240 60 70"
+                    backgroundColor="#0a0a0a"
+                    borderRadius={8}
+                    glowRadius={40}
+                    glowIntensity={1}
+                    coneSpread={25}
+                    animated={true}
+                    colors={['#a6a6ed', '#ffffff', '#2dd4bf']}
+                    className="w-full aspect-[16/10]"
+                  >
+                    <div className="absolute inset-0 flex items-center justify-center z-10">
                       <div className="text-text-muted text-xs font-mono opacity-40">
                         screenshot
                       </div>
                     </div>
-                    {/* Subtle gradient overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#2dd4bf05] to-transparent" />
-                  </div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#a6a6ed05] to-transparent z-0" />
+                  </BorderGlow>
                   {/* Decorative circuit pattern */}
                   <CircuitPattern variant={feature.patternVariant} className="opacity-60" />
                 </div>

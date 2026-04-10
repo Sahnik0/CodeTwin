@@ -1,7 +1,7 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { Suspense } from 'react'
+import { motion, useScroll, useTransform } from 'framer-motion'
+import { Suspense, useRef } from 'react'
 import CircuitPattern from './CircuitPattern'
 import InstallStrip from './InstallStrip'
 import Link from 'next/link'
@@ -9,8 +9,14 @@ import Link from 'next/link'
 const easeOut = [0.16, 1, 0.3, 1] as const
 
 export default function FinalCTASection() {
+  const containerRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start 80%", "center center"] });
+  const textOpacity = useTransform(scrollYProgress, [0, 1], [0.1, 1]);
+  const textScale = useTransform(scrollYProgress, [0, 1], [0.8, 1]);
+  const letterSpacing = useTransform(scrollYProgress, [0, 1], ["-0.08em", "-0.02em"]);
+
   return (
-    <section className="relative py-36 px-6 border-t border-border-default overflow-hidden bg-surface">
+    <section ref={containerRef} className="relative py-36 px-6 border-t border-border-default overflow-hidden bg-surface">
       {/* Background circuit patterns */}
       <CircuitPattern variant="bottom-right" className="opacity-35" />
       <CircuitPattern variant="top-left" className="opacity-20" />
@@ -19,8 +25,7 @@ export default function FinalCTASection() {
       <div
         className="pointer-events-none absolute inset-0"
         style={{
-          background:
-            'radial-gradient(ellipse 60% 50% at 50% 100%, rgba(45,212,191,0.05) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse 60% 50% at 50% 100%, rgba(166,166,237,0.05) 0%, transparent 70%)',
         }}
         aria-hidden="true"
       />
@@ -33,15 +38,18 @@ export default function FinalCTASection() {
           transition={{ duration: 0.65, ease: easeOut }}
         >
           {/* Label */}
-          <p className="text-xs text-[#2dd4bf] uppercase tracking-[0.2em] font-mono mb-6">
+          <p className="text-xs text-[#a6a6ed] uppercase tracking-[0.2em] font-mono mb-6">
             Get Started Free
           </p>
 
           {/* Headline */}
-          <h2 className="text-4xl md:text-6xl font-semibold text-text-primary leading-[1.06] tracking-tight mb-5">
+          <motion.h2 
+            style={{ opacity: textOpacity, scale: textScale, letterSpacing: letterSpacing }}
+            className="text-4xl md:text-6xl font-semibold text-text-primary leading-[1.06] mb-5 origin-center"
+          >
             Come<br />
             Get Some Air
-          </h2>
+          </motion.h2>
 
           {/* Sub copy */}
           <p className="text-base text-text-secondary mb-10 max-w-md mx-auto leading-relaxed">
@@ -62,7 +70,7 @@ export default function FinalCTASection() {
 
             <Link
               href="/docs/getting-started"
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-[#2dd4bf] text-background text-sm font-semibold hover:bg-[#14b8a6] transition-colors duration-200"
+              className="inline-flex items-center gap-2 whitespace-nowrap px-6 py-2.5 rounded-lg bg-[#a6a6ed] text-background text-sm font-semibold hover:bg-[#9494e0] transition-colors duration-200"
             >
               Read the Docs →
             </Link>

@@ -20,8 +20,8 @@
   --success: #22c55e;
   --warning: #f59e0b;
   --danger: #ef4444;
-  --teal: #2dd4bf;
-  --teal-glow: rgba(45, 212, 191, 0.15);
+  --teal: #a6a6ed;
+  --teal-glow: rgba(166, 166, 237, 0.15);
 }
 
 /* ─── Base Reset ─── */

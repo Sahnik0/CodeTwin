@@ -34,20 +34,20 @@ export default function FeatureIconsRow() {
             <div key={i} className="flex flex-col items-center text-center relative group">
               {/* Connecting line (visible between items on desktop) */}
               {i < features.length - 1 && (
-                <div className="hidden md:block absolute top-8 left-[calc(50%+32px)] w-[calc(100%-64px)] h-[1px] border-t border-dashed border-[#2dd4bf33]" />
+                <div className="hidden md:block absolute top-8 left-[calc(50%+32px)] w-[calc(100%-64px)] h-[1px] border-t border-dashed border-[#a6a6ed33]" />
               )}
 
               {/* Diamond icon container */}
               <div className="relative mb-4">
                 <div
-                  className="w-16 h-16 flex items-center justify-center rotate-45 border-2 border-[#2dd4bf44] rounded-lg bg-[#2dd4bf08] group-hover:border-[#2dd4bf88] group-hover:bg-[#2dd4bf12] transition-all duration-300"
+                  className="w-16 h-16 flex items-center justify-center rotate-45 border-2 border-[#a6a6ed44] rounded-lg bg-[#a6a6ed08] group-hover:border-[#a6a6ed88] group-hover:bg-[#a6a6ed12] transition-all duration-300"
                 >
-                  <div className="-rotate-45 text-[#2dd4bf]">
+                  <div className="-rotate-45 text-[#a6a6ed]">
                     {f.icon}
                   </div>
                 </div>
                 {/* Glow effect */}
-                <div className="absolute inset-0 rotate-45 rounded-lg bg-[#2dd4bf] opacity-0 group-hover:opacity-[0.06] blur-xl transition-opacity duration-300" />
+                <div className="absolute inset-0 rotate-45 rounded-lg bg-[#a6a6ed] opacity-0 group-hover:opacity-[0.06] blur-xl transition-opacity duration-300" />
               </div>
 
               <h3 className="text-sm font-medium text-text-primary mb-1">

@@ -1,7 +1,8 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, useScroll, useVelocity, useSpring, useTransform } from 'framer-motion'
 import { Clock, Layers, Users, Cpu } from 'lucide-react'
+import SpotlightCard from './SpotlightCard'
 
 const upcomingFeatures = [
   {
@@ -31,7 +32,7 @@ const upcomingFeatures = [
 ]
 
 const statusColors: Record<string, { bg: string; text: string; border: string }> = {
-  'In Design': { bg: '#2dd4bf14', text: '#2dd4bf', border: '#2dd4bf30' },
+  'In Design': { bg: '#a6a6ed14', text: '#a6a6ed', border: '#a6a6ed30' },
   Planned: { bg: '#7c3aed14', text: '#a78bfa', border: '#7c3aed30' },
   Exploring: { bg: '#f59e0b14', text: '#fbbf24', border: '#f59e0b30' },
 }
@@ -39,6 +40,15 @@ const statusColors: Record<string, { bg: string; text: string; border: string }>
 const easeOut = [0.16, 1, 0.3, 1] as const
 
 export default function WhatsComingSection() {
+  const { scrollY } = useScroll();
+  const scrollVelocity = useVelocity(scrollY);
+  const smoothVelocity = useSpring(scrollVelocity, {
+    damping: 50,
+    stiffness: 400
+  });
+  const skewVelocity = useTransform(smoothVelocity, [-1000, 1000], [-2, 2]);
+  const skewY = useTransform(skewVelocity, (v) => `${v}deg`);
+
   return (
     <section className="py-28 px-6 bg-surface border-t border-border-default">
       <div className="max-w-6xl mx-auto">
@@ -50,7 +60,7 @@ export default function WhatsComingSection() {
           transition={{ duration: 0.5, ease: easeOut }}
           className="mb-4"
         >
-          <p className="text-xs text-[#2dd4bf] uppercase tracking-[0.2em] font-mono mb-3">
+          <p className="text-xs text-[#a6a6ed] uppercase tracking-[0.2em] font-mono mb-3">
             Roadmap
           </p>
           <h2 className="text-3xl md:text-4xl font-semibold text-text-primary leading-tight mb-4">
@@ -61,7 +71,7 @@ export default function WhatsComingSection() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start mt-14">
+        <motion.div style={{ skewY }} className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-stretch mt-14">
           {/* Left — feature cards */}
           <div className="flex flex-col gap-4">
             {upcomingFeatures.map((feature, i) => {
@@ -73,10 +83,13 @@ export default function WhatsComingSection() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: i * 0.08, ease: easeOut }}
-                  className="group flex gap-4 p-4 rounded-lg border border-border-default bg-surface-elevated hover:border-border-hover transition-all duration-200"
                 >
-                  {/* Icon */}
-                  <div className="flex-shrink-0 w-8 h-8 rounded border border-border-default bg-background flex items-center justify-center text-text-muted group-hover:text-[#2dd4bf] group-hover:border-[#2dd4bf33] transition-colors duration-200">
+                  <SpotlightCard
+                    className="group flex flex-row gap-4 !p-4 !rounded-lg !border-border-default !bg-surface-elevated hover:!border-border-hover transition-all duration-200"
+                    spotlightColor="rgba(166, 166, 237, 0.2)"
+                  >
+                    {/* Icon */}
+                    <div className="flex-shrink-0 w-8 h-8 rounded border border-border-default bg-background flex items-center justify-center text-text-muted group-hover:text-[#a6a6ed] group-hover:border-[#a6a6ed33] transition-colors duration-200">
                     {feature.icon}
                   </div>
 
@@ -100,6 +113,7 @@ export default function WhatsComingSection() {
                       {feature.description}
                     </p>
                   </div>
+                  </SpotlightCard>
                 </motion.div>
               )
             })}
@@ -111,9 +125,10 @@ export default function WhatsComingSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2, ease: easeOut }}
+            className="flex flex-col h-full items-stretch"
           >
             <div
-              className="rounded-xl border border-border-default bg-surface-elevated overflow-hidden aspect-[4/3] flex flex-col items-center justify-center gap-2"
+              className="rounded-xl border border-border-default bg-surface-elevated overflow-hidden flex flex-col flex-1 items-center justify-center gap-2"
               style={{
                 boxShadow: '0 0 0 1px rgba(255,255,255,0.03) inset',
               }}
@@ -126,7 +141,7 @@ export default function WhatsComingSection() {
               </span>
             </div>
           </motion.div>
-        </div>
+        </motion.div>
       </div>
     </section>
   )
