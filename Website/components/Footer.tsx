@@ -1,116 +1,132 @@
 import Link from 'next/link'
+import { Bug, Mail, Users } from 'lucide-react'
 import GitHubIcon from './GitHubIcon'
-import CircuitPattern from './CircuitPattern'
+
+type SocialIcon = 'github' | 'bug' | 'users' | 'mail'
+
+type SocialLink = {
+  label: string
+  href: string
+  external: boolean
+  icon: SocialIcon
+}
+
+const socialLinks: SocialLink[] = [
+  {
+    label: 'GitHub Repository',
+    href: 'https://github.com/Sahnik0/CodeTwin',
+    icon: 'github',
+    external: true,
+  },
+  {
+    label: 'Issues & Bug Reports',
+    href: 'https://github.com/Sahnik0/CodeTwin/issues',
+    icon: 'bug',
+    external: true,
+  },
+  {
+    label: 'Contributors',
+    href: 'https://github.com/Sahnik0/CodeTwin/graphs/contributors',
+    icon: 'users',
+    external: true,
+  },
+  {
+    label: 'Connect',
+    href: '/connect',
+    icon: 'mail',
+    external: false,
+  },
+]
+
+const productLinks = [
+  { label: 'Changelog', href: '/changelog' },
+  { label: 'CLI Reference', href: '/docs/cli-reference' },
+  { label: 'Provider Setup', href: '/docs/providers' },
+]
+
+function SocialLinkIcon({ icon }: { icon: SocialIcon }) {
+  if (icon === 'github') {
+    return <GitHubIcon size={21} />
+  }
+
+  if (icon === 'bug') {
+    return <Bug size={21} strokeWidth={1.75} />
+  }
+
+  if (icon === 'users') {
+    return <Users size={21} strokeWidth={1.75} />
+  }
+
+  return <Mail size={21} strokeWidth={1.75} />
+}
 
 export default function Footer() {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="relative border-t border-border-default bg-background overflow-hidden">
-      {/* Faint circuit decoration */}
-      <CircuitPattern variant="bottom-right" className="opacity-15" />
-
-      <div className="relative z-10 max-w-6xl mx-auto px-6 pt-12 pb-8">
-        {/* Main footer row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
-          {/* Brand */}
-          <div>
-            <span className="font-mono text-sm font-semibold text-text-primary block mb-2">
-              Code<span className="text-[#a6a6ed]">Twin</span>
-            </span>
-            <p className="text-xs text-text-muted leading-relaxed max-w-[200px]">
-              A terminal-first AI coding agent. Built for developers who want control.
-            </p>
+    <footer className="relative overflow-hidden border-t border-border-default bg-background">
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col px-6 pb-8 pt-16 md:pt-20">
+        <div className="mx-auto flex w-full max-w-4xl flex-col items-center text-center">
+          <div className="text-5xl font-extrabold leading-none tracking-tight text-text-primary md:text-6xl">
+            Code<span className="text-teal">Twin</span><span className="text-teal">.</span>
           </div>
 
-          {/* Product links */}
-          <div>
-            <p className="text-xs text-text-muted uppercase tracking-widest font-mono mb-4">
-              Product
-            </p>
-            <ul className="flex flex-col gap-2.5">
-              {[
-                { label: 'Documentation', href: '/docs/getting-started' },
-                { label: 'Changelog', href: '/changelog' },
-                { label: 'CLI Reference', href: '/docs/cli-reference' },
-                { label: 'Provider Setup', href: '/docs/providers' },
-              ].map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-text-secondary hover:text-text-primary transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Community / GitHub */}
-          <div>
-            <p className="text-xs text-text-muted uppercase tracking-widest font-mono mb-4">
-              Open Source
-            </p>
-            <ul className="flex flex-col gap-2.5">
-              {[
-                {
-                  label: 'GitHub Repository',
-                  href: 'https://github.com/Sahnik0/CodeTwin',
-                  external: true,
-                },
-                {
-                  label: 'Issues & Bug Reports',
-                  href: 'https://github.com/Sahnik0/CodeTwin/issues',
-                  external: true,
-                },
-                {
-                  label: 'Contributors',
-                  href: 'https://github.com/Sahnik0/CodeTwin/graphs/contributors',
-                  external: true,
-                },
-                { label: 'Connect', href: '/connect', external: false },
-              ].map((link) => (
-                <li key={link.href}>
-                  {link.external ? (
-                    <a
-                      href={link.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-text-secondary hover:text-text-primary transition-colors inline-flex items-center gap-1"
-                    >
-                      {link.label}
-                    </a>
-                  ) : (
-                    <Link
-                      href={link.href}
-                      className="text-sm text-text-secondary hover:text-text-primary transition-colors"
-                    >
-                      {link.label}
-                    </Link>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        {/* Bottom bar */}
-        <div className="pt-6 border-t border-border-default flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <p className="text-xs text-text-muted">
-            © {currentYear} CodeTwin · MIT License · Zero Telemetry
+          <p className="mt-5 max-w-[560px] text-base leading-relaxed text-text-secondary sm:text-lg md:text-xl">
+            A terminal-first AI coding agent. Built for developers who want control.
           </p>
 
-          <a
-            href="https://github.com/Sahnik0/CodeTwin"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text-secondary transition-colors"
-          >
-            <GitHubIcon size={13} />
-            Sahnik0/CodeTwin
-          </a>
+          <nav aria-label="Footer social links" className="mt-9 flex items-center gap-7 text-text-muted">
+            {socialLinks.map((link) => {
+              if (link.external) {
+                return (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={link.label}
+                    className="transition-colors hover:text-text-primary"
+                  >
+                    <SocialLinkIcon icon={link.icon} />
+                  </a>
+                )
+              }
+
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  aria-label={link.label}
+                  className="transition-colors hover:text-text-primary"
+                >
+                  <SocialLinkIcon icon={link.icon} />
+                </Link>
+              )
+            })}
+          </nav>
+
+          
         </div>
+
+        <div className="relative mt-14 flex min-h-[220px] items-end justify-center md:mt-16 md:min-h-[290px]">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-6 select-none text-[22vw] font-black uppercase leading-none tracking-[-0.06em] md:text-[18vw]"
+            style={{
+              backgroundImage: 'linear-gradient(to bottom, #222222 0%, #0a0a0a 85%)',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              color: 'transparent',
+              opacity: 0.6,
+            }}
+          >
+            CodeTwin
+          </div>
+        </div>
+
+        <p className="mt-4 text-xs text-text-muted/50">
+          © {currentYear} CodeTwin · MIT License · Zero Telemetry
+        </p>
       </div>
     </footer>
   )
