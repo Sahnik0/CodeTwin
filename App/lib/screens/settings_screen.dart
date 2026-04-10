@@ -7,9 +7,8 @@ import '../providers/connection_provider.dart';
 import '../providers/session_provider.dart';
 import '../providers/notifications_provider.dart';
 import '../providers/daemon_actions_provider.dart';
-import '../models/session_status.dart';
 import '../widgets/level_picker.dart';
-import '../utils/device_id.dart';
+import '../services/token_store.dart';
 import '../services/socket_service.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -20,15 +19,6 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  final _urlController = TextEditingController();
-  bool _editingUrl = false;
-
-  @override
-  void dispose() {
-    _urlController.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final conn = ref.watch(connectionProvider).valueOrNull ??
@@ -57,78 +47,90 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             child: Column(
               children: [
+                // Pairing ID row
                 ListTile(
-                  leading: const Icon(Icons.fingerprint, color: Colors.white70),
-                  title: const Text('Device ID', style: TextStyle(color: Colors.white)),
+                  leading: const Icon(Icons.link, color: Colors.white70),
+                  title: const Text('Pairing ID', style: TextStyle(color: Colors.white)),
                   subtitle: Text(
-                    conn.deviceId ?? 'Not paired',
-                    style: TextStyle(fontFamily: 'monospace', color: Colors.white.withValues(alpha: 0.4)),
+                    conn.pairingId ?? 'Not paired',
+                    style: TextStyle(
+                        fontFamily: 'monospace',
+                        color: Colors.white.withValues(alpha: 0.4),
+                        fontSize: 12),
                   ),
                 ),
                 Divider(height: 1, color: Colors.white.withValues(alpha: 0.05)),
+
+                // Mobile Device ID
                 ListTile(
-                  leading: const Icon(Icons.cloud, color: Colors.white70),
-                  title: const Text('Signaling URL', style: TextStyle(color: Colors.white)),
-                  subtitle: _editingUrl
-                      ? TextField(
-                          controller: _urlController,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            isDense: true,
-                            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: const Color(0xFF20B2AA).withValues(alpha: 0.5))),
-                            focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF20B2AA))),
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.check, color: Color(0xFF20B2AA)),
-                              onPressed: () {
-                                final url = _urlController.text.trim();
-                                if (url.isNotEmpty) {
-                                  ref
-                                      .read(connectionProvider.notifier)
-                                      .setSignalingUrl(url);
-                                  if (conn.deviceId != null) {
-                                    SocketService().connect(url, conn.deviceId!);
-                                  }
-                                }
-                                setState(() => _editingUrl = false);
-                              },
-                            ),
-                          ),
-                        )
-                      : Text(conn.signalingUrl, style: TextStyle(color: Colors.white.withValues(alpha: 0.4))),
-                  trailing: _editingUrl
-                      ? null
-                      : IconButton(
-                          icon: const Icon(Icons.edit, size: 18, color: Colors.white54),
-                          onPressed: () {
-                            _urlController.text = conn.signalingUrl;
-                            setState(() => _editingUrl = true);
-                          },
-                        ),
+                  leading: const Icon(Icons.smartphone, color: Colors.white70),
+                  title: const Text('Mobile Device ID', style: TextStyle(color: Colors.white)),
+                  subtitle: Text(
+                    conn.mobileDeviceId ?? 'Not paired',
+                    style: TextStyle(
+                        fontFamily: 'monospace',
+                        color: Colors.white.withValues(alpha: 0.4),
+                        fontSize: 12),
+                  ),
                 ),
                 Divider(height: 1, color: Colors.white.withValues(alpha: 0.05)),
+
+                // Server URL
+                ListTile(
+                  leading: const Icon(Icons.cloud, color: Colors.white70),
+                  title: const Text('Server URL', style: TextStyle(color: Colors.white)),
+                  subtitle: Text(
+                    conn.apiBaseUrl.isEmpty ? 'Not configured' : conn.apiBaseUrl,
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                  ),
+                ),
+                Divider(height: 1, color: Colors.white.withValues(alpha: 0.05)),
+
+                // Token Expiry
+                if (conn.tokenExpiresAt != null)
+                  ListTile(
+                    leading: const Icon(Icons.schedule, color: Colors.white70),
+                    title: const Text('Token Expires', style: TextStyle(color: Colors.white)),
+                    subtitle: Text(
+                      _formatExpiry(conn.tokenExpiresAt!),
+                      style: TextStyle(
+                          color: _isTokenExpiringSoon(conn.tokenExpiresAt!)
+                              ? Colors.orangeAccent
+                              : Colors.white.withValues(alpha: 0.4)),
+                    ),
+                  ),
+                Divider(height: 1, color: Colors.white.withValues(alpha: 0.05)),
+
+                // Connection status
                 ListTile(
                   leading: const Icon(Icons.sync, color: Colors.white70),
-                  title: const Text('Connection', style: TextStyle(color: Colors.white)),
-                  subtitle: Text(conn.pairingStatus.name, style: TextStyle(color: Colors.white.withValues(alpha: 0.4))),
+                  title: const Text('Worker', style: TextStyle(color: Colors.white)),
+                  subtitle: Text(
+                      conn.pairingStatus.name,
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.4))),
                   trailing: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
-                      color: conn.daemonConnected ? Colors.teal.withValues(alpha: 0.15) : Colors.red.withValues(alpha: 0.15),
+                      color: conn.daemonConnected
+                          ? Colors.teal.withValues(alpha: 0.15)
+                          : Colors.red.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: conn.daemonConnected ? Colors.teal : Colors.red,
                         width: 1,
-                      )
+                      ),
                     ),
                     child: Text(
                       conn.daemonConnected ? 'ONLINE' : 'OFFLINE',
                       style: TextStyle(
-                        color: conn.daemonConnected ? Colors.tealAccent : Colors.redAccent,
+                        color: conn.daemonConnected
+                            ? Colors.tealAccent
+                            : Colors.redAccent,
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                  )
+                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(16),
@@ -136,12 +138,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       onPressed: () async {
-                        await clearPairing();
+                        await TokenStore().clear();
                         SocketService().disconnect();
-                        ref
-                            .read(connectionProvider.notifier)
-                            .setPairingStatus(
-                                PairingStatus.unpaired);
+                        ref.read(connectionProvider.notifier).clearAll();
                         if (context.mounted) context.go('/pair');
                       },
                       style: OutlinedButton.styleFrom(
@@ -228,5 +227,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  String _formatExpiry(int expiresAtMs) {
+    final dt = DateTime.fromMillisecondsSinceEpoch(expiresAtMs);
+    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+  }
+
+  bool _isTokenExpiringSoon(int expiresAtMs) {
+    final dt = DateTime.fromMillisecondsSinceEpoch(expiresAtMs);
+    return dt.difference(DateTime.now()).inDays < 3;
   }
 }

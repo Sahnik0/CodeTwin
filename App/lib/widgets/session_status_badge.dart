@@ -12,8 +12,8 @@ class SessionStatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final (Color bg, Color fg, String label, IconData icon) = switch (status) {
       SessionStatus.idle => (
-          Colors.grey.shade800,
-          Colors.grey.shade300,
+          Colors.white,
+          Colors.black,
           'Idle',
           Icons.pause_circle_outline,
         ),
@@ -48,6 +48,7 @@ class SessionStatusBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: fg.withValues(alpha: 0.8), width: 1.2),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

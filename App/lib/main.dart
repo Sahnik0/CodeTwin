@@ -2,9 +2,10 @@
 ///
 /// On launch:
 /// 1. Initialize notifications
-/// 2. Load saved pairing from secure storage
-/// 3. If paired, connect to the signaling server
-/// 4. Run the app inside a Riverpod ProviderScope
+/// 2. Load saved pairing credentials from secure storage (TokenStore)
+/// 3. If credentials exist and haven't expired, auto-connect WebSocket
+/// 4. If expired, the App widget marks token as expired → router redirects to /pair
+/// 5. Run the app inside a Riverpod ProviderScope
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,7 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'app.dart';
 import 'services/notifications_service.dart';
 import 'services/socket_service.dart';
-import 'utils/device_id.dart';
+import 'services/token_store.dart';
 import 'providers/onboarding_provider.dart';
 
 Future<void> main() async {
@@ -25,8 +26,8 @@ Future<void> main() async {
   await NotificationsService().init();
   await NotificationsService().requestPermission();
 
-  // Check for existing pairing
-  final pairing = await loadPairing();
+  // Load saved remote bridge credentials
+  final creds = await TokenStore().load();
 
   // Track foreground/background for notification routing
   final lifecycleListener = AppLifecycleListener(
@@ -36,9 +37,13 @@ Future<void> main() async {
     },
   );
 
-  // If already paired, connect immediately
-  if (pairing != null) {
-    SocketService().connect(pairing.signalingUrl, pairing.deviceId);
+  // If already paired and token is valid, auto-reconnect WebSocket
+  if (creds != null && !creds.isExpired) {
+    SocketService().connect(
+      creds.wsUrl,
+      creds.clientToken,
+      mobileDeviceId: creds.mobileDeviceId,
+    );
   }
 
   runApp(
@@ -46,7 +51,7 @@ Future<void> main() async {
       overrides: [
         sharedPreferencesProvider.overrideWithValue(sharedPrefs),
       ],
-      child: const App(),
+      child: App(startupCreds: creds),
     ),
   );
 

@@ -6,7 +6,7 @@
 
 enum SessionStatus { idle, running, awaitingApproval, paused, failed }
 
-enum PairingStatus { unpaired, connecting, paired, daemonOffline }
+enum PairingStatus { unpaired, connecting, paired, daemonOffline, tokenExpired }
 
 enum AgentLogLevel { info, warn, error, tool }
 

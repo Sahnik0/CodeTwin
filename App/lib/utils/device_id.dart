@@ -1,27 +1,34 @@
-/// Secure storage helpers for the device pairing credentials.
+/// Secure storage helpers for backward compatibility.
+///
+/// New code should use TokenStore directly. This shim wraps TokenStore
+/// so existing call sites that used device_id.dart still compile.
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../services/token_store.dart';
 
-const _storage = FlutterSecureStorage();
-const _deviceIdKey = 'CodeTwin_device_id';
-const _signalingUrlKey = 'CodeTwin_signaling_url';
+final _store = TokenStore();
 
-/// Persist the pairing info (deviceId + signaling URL) securely.
-Future<void> savePairing(String deviceId, String signalingUrl) async {
-  await _storage.write(key: _deviceIdKey, value: deviceId);
-  await _storage.write(key: _signalingUrlKey, value: signalingUrl);
+/// Persist pairing info. Kept for backward compat — prefer TokenStore.save().
+Future<void> savePairing(String mobileDeviceId, String wsUrl) async {
+  // Only saves the two old fields; full save is done by PairingService flow.
+  final existing = await _store.load();
+  if (existing != null) {
+    await _store.save(StoredCredentials(
+      clientToken: existing.clientToken,
+      pairingId: existing.pairingId,
+      mobileDeviceId: mobileDeviceId,
+      tokenExpiresAt: existing.tokenExpiresAt,
+      apiBaseUrl: existing.apiBaseUrl,
+      wsUrl: wsUrl,
+    ));
+  }
 }
 
-/// Load previously saved pairing, or `null` if none exists.
+/// Load previously saved pairing info.
 Future<({String deviceId, String signalingUrl})?> loadPairing() async {
-  final deviceId = await _storage.read(key: _deviceIdKey);
-  final signalingUrl = await _storage.read(key: _signalingUrlKey);
-  if (deviceId == null || signalingUrl == null) return null;
-  return (deviceId: deviceId, signalingUrl: signalingUrl);
+  final creds = await _store.load();
+  if (creds == null) return null;
+  return (deviceId: creds.mobileDeviceId, signalingUrl: creds.wsUrl);
 }
 
-/// Clear all pairing data (used when user re-pairs).
-Future<void> clearPairing() async {
-  await _storage.delete(key: _deviceIdKey);
-  await _storage.delete(key: _signalingUrlKey);
-}
+/// Clear all pairing data.
+Future<void> clearPairing() => _store.clear();

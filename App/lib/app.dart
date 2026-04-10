@@ -1,15 +1,62 @@
 /// MaterialApp.router with Material 3 dark theme.
+///
+/// Bootstraps the connection state from saved credentials on first frame.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'router.dart';
+import 'providers/connection_provider.dart';
+import 'services/token_store.dart';
 
-class App extends ConsumerWidget {
-  const App({super.key});
+class App extends ConsumerStatefulWidget {
+  /// Credentials pre-loaded in main() from TokenStore. Null if not paired.
+  final StoredCredentials? startupCreds;
+
+  const App({super.key, this.startupCreds});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<App> createState() => _AppState();
+}
+
+class _AppState extends ConsumerState<App> {
+  @override
+  void initState() {
+    super.initState();
+    // Bootstrap connection state after the first frame so providers are ready
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
+  }
+
+  void _bootstrap() {
+    final creds = widget.startupCreds;
+    if (creds == null) return;
+
+    final notifier = ref.read(connectionProvider.notifier);
+
+    if (creds.isExpired) {
+      notifier.initFromPairingResult(
+        clientToken: creds.clientToken,
+        pairingId: creds.pairingId,
+        mobileDeviceId: creds.mobileDeviceId,
+        tokenExpiresAt: creds.tokenExpiresAt,
+        apiBaseUrl: creds.apiBaseUrl,
+        wsUrl: creds.wsUrl,
+      );
+      notifier.markTokenExpired();
+    } else {
+      notifier.initFromPairingResult(
+        clientToken: creds.clientToken,
+        pairingId: creds.pairingId,
+        mobileDeviceId: creds.mobileDeviceId,
+        tokenExpiresAt: creds.tokenExpiresAt,
+        apiBaseUrl: creds.apiBaseUrl,
+        wsUrl: creds.wsUrl,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(

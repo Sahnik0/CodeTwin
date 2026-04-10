@@ -54,13 +54,13 @@ class _TaskInputState extends State<TaskInput> {
       curve: Curves.easeOutCubic,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF16161A), // Deep sleek background
-        borderRadius: BorderRadius.circular(28), // Sweeping uniform radius
+        color: const Color(0xFF16161A), // Solid sleek background
+        borderRadius: BorderRadius.circular(28),
         border: Border.all(
           color: isFocused
-              ? primaryColor.withValues(alpha: 0.5)
-              : Colors.white.withValues(alpha: 0.08),
-          width: 1.5,
+              ? primaryColor.withValues(alpha: 0.8)
+              : Colors.white.withValues(alpha: 0.12),
+          width: 1.0,
         ),
         boxShadow: [
           if (isFocused)

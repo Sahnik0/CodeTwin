@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'providers/connection_provider.dart';
 import 'providers/onboarding_provider.dart';
+import 'models/session_status.dart';
 import 'screens/pair_screen.dart';
 import 'screens/shell_screen.dart';
 import 'screens/dashboard_screen.dart';
@@ -27,14 +28,21 @@ final routerProvider = Provider<GoRouter>((ref) {
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/',
     redirect: (context, state) {
-      final isPaired = connection.valueOrNull?.deviceId != null;
+      final connState = connection.valueOrNull;
+      final isPaired = connState?.isPaired == true;
+      final isTokenExpired =
+          connState?.pairingStatus == PairingStatus.tokenExpired;
       final isGoingToPairPage = state.matchedLocation == '/pair';
       final isGoingToOnboarding = state.matchedLocation == '/onboarding';
 
       if (!isOnboarded && !isGoingToOnboarding) return '/onboarding';
+      // Token expired → force re-pair
+      if (isTokenExpired && !isGoingToPairPage) return '/pair';
       if (isOnboarded && !isPaired && !isGoingToPairPage) return '/pair';
-      if (isPaired && (isGoingToPairPage || isGoingToOnboarding)) return '/dashboard';
-      
+      if (isPaired && (isGoingToPairPage || isGoingToOnboarding)) {
+        return '/dashboard';
+      }
+
       return null;
     },
     routes: [

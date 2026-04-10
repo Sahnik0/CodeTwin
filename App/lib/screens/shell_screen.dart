@@ -1,10 +1,14 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/session_provider.dart';
+import '../models/session_status.dart';
+import '../providers/daemon_actions_provider.dart';
+import '../widgets/session_status_badge.dart';
 import '../widgets/daemon_status_bar.dart';
 import '../theme/cli_theme.dart';
-
+import '../services/bridge_listener_service.dart';
 
 class SwipeableShellContainer extends StatefulWidget {
   final StatefulNavigationShell navigationShell;
@@ -76,69 +80,88 @@ class ShellScreen extends ConsumerWidget {
         ? 0
         : session.preflightQueue.length + session.decisionQueue.length;
 
+    // Activate bridge event → provider wiring (pure provider, no widget wrap)
+    ref.watch(bridgeListenerProvider);
+
     return CliTheme(
-      level: session?.dependenceLevel ?? 1,
-      child: Builder(builder: (context) {
-        final cli = CliTheme.of(context);
-        return Scaffold(
-          backgroundColor: cli.bg,
-          body: SafeArea(
-            child: Stack(
+        level: session?.dependenceLevel ?? 1,
+        child: Builder(builder: (context) {
+          final cli = CliTheme.of(context);
+          return Scaffold(
+            backgroundColor: cli.bg,
+            body: Stack(
               children: [
+                // 1. Main Content: Ignore the top safe area (bleed into status bar)
                 Positioned.fill(child: shell),
-                const Positioned(
-                  bottom: 16,
-                  right: 16,
-                  child: DaemonStatusBar(),
-                ),
-              ],
-            ),
-          ),
-          bottomNavigationBar: RepaintBoundary(
-            child: Container(
-              decoration: BoxDecoration(
-                color: cli.bg,
-                border: Border(top: BorderSide(color: cli.border, width: 1)),
-              ),
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+
+                // 2. Floating Overlays: Respect the safe area (top status hub)
+                SafeArea(
+                  child: Stack(
                     children: [
-                      _CliNavItem(
-                        label: 'DASHBOARD',
-                        icon: Icons.terminal,
-                        isSelected: shell.currentIndex == 0,
-                        onTap: () => _onTap(context, 0),
-                      ),
-                      _CliNavItem(
-                        label: 'LOGS',
-                        icon: Icons.list_alt_outlined,
-                        isSelected: shell.currentIndex == 1,
-                        badgeCount: badgeCount,
-                        onTap: () => _onTap(context, 1),
-                      ),
-                      _CliNavItem(
-                        label: 'HISTORY',
-                        icon: Icons.history_outlined,
-                        isSelected: shell.currentIndex == 2,
-                        onTap: () => _onTap(context, 2),
-                      ),
-                      _CliNavItem(
-                        label: 'SETTINGS',
-                        icon: Icons.settings_outlined,
-                        isSelected: shell.currentIndex == 3,
-                        onTap: () => _onTap(context, 3),
+                      // Floating Status Bar (Dashboard only)
+                      if (shell.currentIndex == 0 && session != null)
+                        Positioned(
+                          top: 4,
+                          left: 16,
+                          right: 16,
+                          child: _FloatingStatusBar(session: session),
+                        ),
+
+                      Positioned(
+                        bottom: 16,
+                        right: 16,
+                        child: const DaemonStatusBar(),
                       ),
                     ],
                   ),
                 ),
+              ],
+            ),
+            bottomNavigationBar: RepaintBoundary(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: cli.bg,
+                  border: Border(top: BorderSide(color: cli.border, width: 1)),
+                ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _CliNavItem(
+                          label: 'DASHBOARD',
+                          icon: Icons.terminal,
+                          isSelected: shell.currentIndex == 0,
+                          onTap: () => _onTap(context, 0),
+                        ),
+                        _CliNavItem(
+                          label: 'LOGS',
+                          icon: Icons.list_alt_outlined,
+                          isSelected: shell.currentIndex == 1,
+                          badgeCount: badgeCount,
+                          onTap: () => _onTap(context, 1),
+                        ),
+                        _CliNavItem(
+                          label: 'HISTORY',
+                          icon: Icons.history_outlined,
+                          isSelected: shell.currentIndex == 2,
+                          onTap: () => _onTap(context, 2),
+                        ),
+                        _CliNavItem(
+                          label: 'SETTINGS',
+                          icon: Icons.settings_outlined,
+                          isSelected: shell.currentIndex == 3,
+                          onTap: () => _onTap(context, 3),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
-        );
-      }),
+          );
+        }),
     );
   }
 
@@ -147,15 +170,88 @@ class ShellScreen extends ConsumerWidget {
   }
 }
 
+// ── Floating Status Bar ──────────────────────────────────────────────────────
+class _FloatingStatusBar extends ConsumerWidget {
+  final SessionState session;
+  const _FloatingStatusBar({required this.session});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cli = CliTheme.of(context);
+    final isRunning = session.status == SessionStatus.running;
+    final actions = ref.read(daemonActionsProvider);
+
+    return Row(
+      children: [
+        // Status Badge
+        SessionStatusBadge(status: session.status),
+        const Spacer(),
+        if (isRunning) ...[
+          _BlinkingCursor(color: cli.accent),
+          const SizedBox(width: 8),
+          TextButton.icon(
+            onPressed: () => actions.cancelTask(),
+            icon: Text('[', style: cli.mono.copyWith(color: cli.red)),
+            label: Text(
+              'SIGINT',
+              style: cli.mono.copyWith(
+                  color: cli.red, fontSize: 11, fontWeight: FontWeight.bold),
+            ),
+            style: TextButton.styleFrom(
+              foregroundColor: cli.red,
+              backgroundColor: cli.bg.withValues(alpha: 0.8), // Glass effect
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              side: BorderSide(color: cli.red, width: 1),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(3)),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _BlinkingCursor extends StatefulWidget {
+  final Color? color;
+  const _BlinkingCursor({super.key, this.color});
+
+  @override
+  State<_BlinkingCursor> createState() => _BlinkingCursorState();
+}
+
+class _BlinkingCursorState extends State<_BlinkingCursor> {
+  bool _visible = true;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(milliseconds: 530), (_) {
+      if (mounted) setState(() => _visible = !_visible);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cli = CliTheme.of(context);
+    return AnimatedOpacity(
+      opacity: _visible ? 1 : 0,
+      duration: const Duration(milliseconds: 80),
+      child: Text('█',
+          style: cli.mono.copyWith(
+              color: widget.color ?? cli.accent, fontSize: 14)),
+    );
+  }
+}
+
 // ── Nav item ──────────────────────────────────────────────────────────────────
-// Optimisations:
-//  • AnimationController drives a single 0→1 value; all derived values
-//    (scale, color, underline width) are computed from it via Tween — no
-//    AnimatedBuilder wrapping the whole Column.
-//  • ScaleTransition on the icon only  (GPU-composited, no layout pass).
-//  • Color lerp via ColorTween evaluated once per frame, not AnimatedDefaultTextStyle.
-//  • Text label uses a pre-built string switch — no re-layout on every tick.
-//  • RepaintBoundary isolates each item's repaints from its siblings.
 class _CliNavItem extends StatefulWidget {
   final String label;
   final IconData icon;
@@ -178,9 +274,6 @@ class _CliNavItem extends StatefulWidget {
 class _CliNavItemState extends State<_CliNavItem>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
-
-  // Tween-driven values — evaluated once per frame inside AnimatedBuilder
-  // but scoped only to the widgets that actually change.
   late final Animation<double> _scale;
   late final Animation<double> _underlineWidth;
 
@@ -216,8 +309,7 @@ class _CliNavItemState extends State<_CliNavItem>
     super.dispose();
   }
 
-  // Label strings are pre-built — no string interpolation on each rebuild.
-  String get _activeLabel  => '[ ${widget.label} ]';
+  String get _activeLabel => '[ ${widget.label} ]';
   String get _inactiveLabel => widget.label;
 
   @override
@@ -233,7 +325,6 @@ class _CliNavItemState extends State<_CliNavItem>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ── Icon: only this subtree scales ──────────────────────
               Stack(
                 clipBehavior: Clip.none,
                 alignment: Alignment.center,
@@ -255,10 +346,7 @@ class _CliNavItemState extends State<_CliNavItem>
                     ),
                 ],
               ),
-
               const SizedBox(height: 4),
-
-              // ── Label: only text color animates, layout is stable ───
               _AnimatedLabel(
                 animation: _ctrl,
                 activeLabel: _activeLabel,
@@ -267,10 +355,7 @@ class _CliNavItemState extends State<_CliNavItem>
                 toColor: cli.accent,
                 mono: cli.mono,
               ),
-
               const SizedBox(height: 3),
-
-              // ── Underline: width animates via AnimatedBuilder ────────
               AnimatedBuilder(
                 animation: _underlineWidth,
                 builder: (_, __) => SizedBox(
@@ -289,7 +374,6 @@ class _CliNavItemState extends State<_CliNavItem>
   }
 }
 
-// ── Colour-animating icon (no layout, pure paint) ─────────────────────────────
 class _AnimatedIconColor extends AnimatedWidget {
   final IconData icon;
   final Color fromColor;
@@ -313,7 +397,6 @@ class _AnimatedIconColor extends AnimatedWidget {
   }
 }
 
-// ── Label with animated colour + crossfade between active/inactive strings ────
 class _AnimatedLabel extends AnimatedWidget {
   final String activeLabel;
   final String inactiveLabel;
@@ -347,7 +430,6 @@ class _AnimatedLabel extends AnimatedWidget {
   }
 }
 
-// ── Badge ─────────────────────────────────────────────────────────────────────
 class _Badge extends StatelessWidget {
   final int count;
   final Color color;

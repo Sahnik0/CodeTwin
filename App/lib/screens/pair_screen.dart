@@ -1,13 +1,22 @@
-/// Pairing screen — QR scan + manual entry.
+/// Pairing screen — enter server URL + pairing code from the CLI.
+///
+/// The CLI runs `codetwin login <serverUrl>` which displays a short
+/// alphanumeric code such as `54NRW7GZ7YUX`. The user enters this code
+/// here to complete the handshake via POST /pair/mobile/complete.
+///
+/// QR scanning is also supported: the CLI can optionally display a QR
+/// whose JSON payload contains {"apiBaseUrl": "...", "code": "..."}.
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:uuid/uuid.dart';
 import '../providers/connection_provider.dart';
+import '../services/pairing_service.dart';
 import '../services/socket_service.dart';
-import '../utils/device_id.dart';
+import '../services/token_store.dart';
 
 class PairScreen extends ConsumerStatefulWidget {
   const PairScreen({super.key});
@@ -19,30 +28,75 @@ class PairScreen extends ConsumerStatefulWidget {
 class _PairScreenState extends ConsumerState<PairScreen> {
   bool _manualMode = false;
   bool _isConnecting = false;
-  final _deviceIdController = TextEditingController();
-  final _urlController = TextEditingController(text: 'wss://signal.codetwin.dev');
+  String? _errorMessage;
+
+  final _codeController = TextEditingController();
+  final _urlController = TextEditingController(
+    text: 'https://codetwin-1quv.onrender.com',
+  );
   final _formKey = GlobalKey<FormState>();
-  final _deviceIdPattern = RegExp(r'^[0-9a-f]{12}$');
+
+  static const _primaryColor = Color(0xFF20B2AA);
 
   @override
   void dispose() {
-    _deviceIdController.dispose();
+    _codeController.dispose();
     _urlController.dispose();
     super.dispose();
   }
 
-  Future<void> _pair(String deviceId, String signalingUrl) async {
-    setState(() => _isConnecting = true);
+  Future<void> _completePairing(String apiBaseUrl, String code) async {
+    setState(() {
+      _isConnecting = true;
+      _errorMessage = null;
+    });
 
-    await savePairing(deviceId, signalingUrl);
-    ref.read(connectionProvider.notifier).initFromPairing(
-          deviceId,
-          signalingUrl,
-        );
-    SocketService().connect(signalingUrl, deviceId);
+    try {
+      final mobileDeviceId = const Uuid().v4();
+      final result = await PairingService().completePairing(
+        apiBaseUrl: apiBaseUrl,
+        code: code,
+        mobileDeviceId: mobileDeviceId,
+        mobileDeviceName: 'CodeTwin Mobile',
+      );
 
-    if (mounted) {
-      context.go('/dashboard');
+      // Persist credentials
+      await TokenStore().save(result);
+
+      // Update provider state
+      ref.read(connectionProvider.notifier).initFromPairingResult(
+            clientToken: result.clientToken,
+            pairingId: result.pairingId,
+            mobileDeviceId: result.mobileDeviceId,
+            tokenExpiresAt: result.tokenExpiresAt,
+            apiBaseUrl: result.apiBaseUrl,
+            wsUrl: result.wsUrl,
+          );
+
+      // Connect WebSocket
+      SocketService().connect(
+        result.wsUrl,
+        result.clientToken,
+        mobileDeviceId: result.mobileDeviceId,
+      );
+
+      if (mounted) {
+        context.go('/dashboard');
+      }
+    } on PairingException catch (e) {
+      if (mounted) {
+        setState(() {
+          _isConnecting = false;
+          _errorMessage = e.message;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isConnecting = false;
+          _errorMessage = 'Unexpected error: $e';
+        });
+      }
     }
   }
 
@@ -52,10 +106,24 @@ class _PairScreenState extends ConsumerState<PairScreen> {
       if (raw == null) continue;
       try {
         final json = jsonDecode(raw) as Map<String, dynamic>;
-        final deviceId = json['deviceId'] as String?;
-        final signalingUrl = json['signalingUrl'] as String?;
-        if (deviceId != null && signalingUrl != null) {
-          _pair(deviceId, signalingUrl);
+
+        // New QR format: {apiBaseUrl, code}
+        final apiBaseUrl = json['apiBaseUrl'] as String?;
+        final code = json['code'] as String?;
+        if (apiBaseUrl != null && code != null) {
+          _completePairing(apiBaseUrl, code);
+          return;
+        }
+
+        // Legacy fallback: {signalingUrl, code} — map signalingUrl → apiBaseUrl
+        final legacy = json['signalingUrl'] as String?;
+        final legacyCode = json['code'] as String? ?? json['pairCode'] as String?;
+        if (legacy != null && legacyCode != null) {
+          // Convert wss:// → https:// for apiBaseUrl
+          final httpBase = legacy
+              .replaceFirst('wss://', 'https://')
+              .replaceFirst('/ws', '');
+          _completePairing(httpBase, legacyCode);
           return;
         }
       } catch (_) {
@@ -66,153 +134,145 @@ class _PairScreenState extends ConsumerState<PairScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = const Color(0xFF20B2AA);
-
     return Theme(
       data: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: Colors.black,
-        colorScheme: ColorScheme.dark(
-          primary: primaryColor,
+        colorScheme: const ColorScheme.dark(
+          primary: _primaryColor,
           onPrimary: Colors.white,
           surface: Colors.black,
         ),
       ),
       child: Scaffold(
         backgroundColor: Colors.black,
-        body: Stack(
-          children: [
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 16),
-                    // Titles
-                    Text(
-                      'DEVICE PAIRING',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: primaryColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 2.0,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Connect to CodeTwin',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w300,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Scan the QR code shown by the CLI or enter pairing info manually.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.5),
-                        fontSize: 13,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 48),
+        body: SafeArea(
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 16),
 
-                    // Main Content
-                    Expanded(
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 500),
-                        switchInCurve: Curves.easeOutExpo,
-                        switchOutCurve: Curves.easeInExpo,
-                        child: _isConnecting
-                            ? _buildConnectingState(primaryColor)
-                            : (_manualMode
-                                ? _buildManualForm(primaryColor)
-                                : _buildQrScanner(primaryColor)),
+                // ── Header ─────────────────────────────────────────────
+                const Text(
+                  'DEVICE PAIRING',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: _primaryColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 2.0,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Connect to CodeTwin',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w300,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _manualMode
+                      ? 'Run `codetwin login <server-url>` in your terminal,\nthen enter the code below.'
+                      : 'Scan the QR code shown by the CLI\nor switch to manual code entry.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.5),
+                    fontSize: 13,
+                    height: 1.5,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // ── Error Banner ────────────────────────────────────────
+                if (_errorMessage != null)
+                  _ErrorBanner(message: _errorMessage!),
+
+                // ── Main Content ────────────────────────────────────────
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 400),
+                    switchInCurve: Curves.easeOutExpo,
+                    switchOutCurve: Curves.easeInExpo,
+                    child: _isConnecting
+                        ? _buildConnectingState()
+                        : (_manualMode
+                            ? _buildManualForm()
+                            : _buildQrScanner()),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // ── Mode Toggle ─────────────────────────────────────────
+                if (!_isConnecting)
+                  Center(
+                    child: TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _manualMode = !_manualMode;
+                          _errorMessage = null;
+                        });
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: _primaryColor,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                          side: BorderSide(
+                              color: _primaryColor.withOpacity(0.3)),
+                        ),
+                      ),
+                      child: Text(
+                        _manualMode ? 'USE QR SCANNER' : 'ENTER CODE MANUALLY',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          letterSpacing: 1.5,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Toggle Mode Button
-                    if (!_isConnecting)
-                      Center(
-                        child: TextButton(
-                          onPressed: () => setState(() => _manualMode = !_manualMode),
-                          style: TextButton.styleFrom(
-                            foregroundColor: primaryColor,
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              side: BorderSide(color: primaryColor.withOpacity(0.3)),
-                            ),
-                          ),
-                          child: Text(
-                            _manualMode ? 'USE QR SCANNER' : 'ENTER MANUALLY',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              letterSpacing: 1.5,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    
-                    if (!_isConnecting)
-                      Center(
-                        child: TextButton(
-                          onPressed: () {
-                            // Dev bypass: Use a fake device ID and go to dashboard
-                            _deviceIdController.text = '0123456789ab';
-                            _pair(_deviceIdController.text, _urlController.text);
-                          },
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.amber, // Give it a distinct color
-                          ),
-                          child: const Text(
-                            'DEV BYPASS',
-                            style: TextStyle(
-                              fontSize: 10,
-                              letterSpacing: 1.5,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
+                  ),
+                const SizedBox(height: 8),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildConnectingState(Color primaryColor) {
+  // ── Connecting state ────────────────────────────────────────────────────────
+
+  Widget _buildConnectingState() {
     return Column(
+      key: const ValueKey('connecting'),
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         SizedBox(
           width: 200,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              backgroundColor: primaryColor.withOpacity(0.1),
-              valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+            child: const LinearProgressIndicator(
+              backgroundColor: Color(0xFF20B2AA22),
+              valueColor: AlwaysStoppedAnimation<Color>(_primaryColor),
               minHeight: 2,
             ),
           ),
         ),
         const SizedBox(height: 24),
-        Text(
-          'CONNECTING...',
+        const Text(
+          'PAIRING...',
           style: TextStyle(
-            color: primaryColor,
+            color: _primaryColor,
             fontSize: 14,
             letterSpacing: 2.0,
             fontWeight: FontWeight.w600,
@@ -220,7 +280,7 @@ class _PairScreenState extends ConsumerState<PairScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Authenticating with server',
+          'Contacting server',
           style: TextStyle(
             color: Colors.white.withOpacity(0.4),
             fontSize: 12,
@@ -230,14 +290,18 @@ class _PairScreenState extends ConsumerState<PairScreen> {
     );
   }
 
-  Widget _buildQrScanner(Color primaryColor) {
+  // ── QR scanner ──────────────────────────────────────────────────────────────
+
+  Widget _buildQrScanner() {
     return Container(
+      key: const ValueKey('qr'),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: primaryColor.withValues(alpha: 0.3), width: 1.5),
+        border: Border.all(
+            color: _primaryColor.withOpacity(0.3), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: primaryColor.withValues(alpha: 0.05),
+            color: _primaryColor.withOpacity(0.05),
             blurRadius: 20,
             spreadRadius: 5,
           ),
@@ -258,9 +322,9 @@ class _PairScreenState extends ConsumerState<PairScreen> {
                   children: [
                     CustomPaint(
                       size: const Size(220, 220),
-                      painter: _ScannerOverlayPainter(color: primaryColor),
+                      painter: _ScannerOverlayPainter(color: _primaryColor),
                     ),
-                    _AnimatedScannerLaser(color: primaryColor),
+                    _AnimatedScannerLaser(color: _primaryColor),
                   ],
                 ),
               ),
@@ -271,39 +335,50 @@ class _PairScreenState extends ConsumerState<PairScreen> {
     );
   }
 
-  Widget _buildManualForm(Color primaryColor) {
+  // ── Manual form ─────────────────────────────────────────────────────────────
+
+  Widget _buildManualForm() {
     return SingleChildScrollView(
+      key: const ValueKey('manual'),
       child: Form(
         key: _formKey,
         child: Column(
           children: [
-            _buildAiInputField(
-              controller: _deviceIdController,
-              label: 'DEVICE ID',
-              icon: Icons.fingerprint,
+            // Server URL field
+            _buildField(
+              controller: _urlController,
+              label: 'SERVER URL',
+              hint: 'https://codetwin-1quv.onrender.com',
+              icon: Icons.cloud_outlined,
+              keyboardType: TextInputType.url,
               validator: (v) {
-                if (v == null || !_deviceIdPattern.hasMatch(v)) {
-                  return 'Must be a 12-character hex string';
+                if (v == null || v.trim().isEmpty) return 'Server URL required';
+                final uri = Uri.tryParse(v.trim());
+                if (uri == null || !uri.hasScheme) return 'Enter a valid URL';
+                if (!uri.scheme.startsWith('http')) {
+                  return 'Use http:// or https://';
                 }
                 return null;
               },
-              primaryColor: primaryColor,
             ),
-            const SizedBox(height: 24),
-            _buildAiInputField(
-              controller: _urlController,
-              label: 'SIGNALING URL',
-              icon: Icons.cloud_outlined,
+            const SizedBox(height: 20),
+
+            // Pair code field
+            _buildField(
+              controller: _codeController,
+              label: 'PAIRING CODE',
+              hint: 'e.g. 54NRW7GZ7YUX',
+              icon: Icons.vpn_key_outlined,
+              textCapitalization: TextCapitalization.characters,
               validator: (v) {
-                if (v == null || v.isEmpty) return 'URL required';
-                final uri = Uri.tryParse(v);
-                if (uri == null || !uri.hasScheme) return 'Invalid URL';
+                if (v == null || v.trim().isEmpty) return 'Pairing code required';
+                if (v.trim().length < 4) return 'Code too short';
                 return null;
               },
-              primaryColor: primaryColor,
             ),
-            const SizedBox(height: 40),
-            // Glowing submit button
+            const SizedBox(height: 36),
+
+            // Connect button
             Container(
               width: double.infinity,
               height: 56,
@@ -311,7 +386,7 @@ class _PairScreenState extends ConsumerState<PairScreen> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: primaryColor.withOpacity(0.4),
+                    color: _primaryColor.withOpacity(0.35),
                     blurRadius: 20,
                     offset: const Offset(0, 4),
                   ),
@@ -320,20 +395,20 @@ class _PairScreenState extends ConsumerState<PairScreen> {
               child: FilledButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
-                    _pair(
-                      _deviceIdController.text.trim(),
+                    _completePairing(
                       _urlController.text.trim(),
+                      _codeController.text.trim().toUpperCase(),
                     );
                   }
                 },
                 style: FilledButton.styleFrom(
-                  backgroundColor: primaryColor,
+                  backgroundColor: _primaryColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
                 child: const Text(
-                  'CONNECT',
+                  'PAIR DEVICE',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -349,34 +424,47 @@ class _PairScreenState extends ConsumerState<PairScreen> {
     );
   }
 
-  Widget _buildAiInputField({
+  Widget _buildField({
     required TextEditingController controller,
     required String label,
     required IconData icon,
     required String? Function(String?) validator,
-    required Color primaryColor,
+    String? hint,
+    TextInputType? keyboardType,
+    TextCapitalization textCapitalization = TextCapitalization.none,
   }) {
     return TextFormField(
       controller: controller,
-      style: const TextStyle(color: Colors.white, fontSize: 16, letterSpacing: 1.5),
+      style: const TextStyle(
+          color: Colors.white, fontSize: 16, letterSpacing: 1.2),
+      keyboardType: keyboardType,
+      textCapitalization: textCapitalization,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: primaryColor.withOpacity(0.8), letterSpacing: 2.0, fontSize: 12),
-        prefixIcon: Icon(icon, color: primaryColor.withOpacity(0.8)),
+        hintText: hint,
+        hintStyle: TextStyle(color: Colors.white.withOpacity(0.2), fontSize: 13),
+        labelStyle: TextStyle(
+            color: _primaryColor.withOpacity(0.8),
+            letterSpacing: 2.0,
+            fontSize: 12),
+        prefixIcon: Icon(icon, color: _primaryColor.withOpacity(0.8)),
         filled: true,
-        fillColor: primaryColor.withOpacity(0.05),
-        errorStyle: const TextStyle(color: Colors.redAccent, letterSpacing: 1.0, fontSize: 10),
+        fillColor: _primaryColor.withOpacity(0.05),
+        errorStyle: const TextStyle(
+            color: Colors.redAccent, letterSpacing: 1.0, fontSize: 10),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: primaryColor.withOpacity(0.2), width: 1.5),
+          borderSide:
+              BorderSide(color: _primaryColor.withOpacity(0.2), width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: primaryColor, width: 2),
+          borderSide: const BorderSide(color: _primaryColor, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.redAccent.withOpacity(0.5), width: 1.5),
+          borderSide:
+              BorderSide(color: Colors.redAccent.withOpacity(0.5), width: 1.5),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -388,6 +476,41 @@ class _PairScreenState extends ConsumerState<PairScreen> {
     );
   }
 }
+
+// ── Error Banner ──────────────────────────────────────────────────────────────
+
+class _ErrorBanner extends StatelessWidget {
+  final String message;
+  const _ErrorBanner({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.redAccent.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline, color: Colors.redAccent, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                  color: Colors.redAccent, fontSize: 13, height: 1.4),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── QR Overlay Painter ────────────────────────────────────────────────────────
 
 class _ScannerOverlayPainter extends CustomPainter {
   final Color color;
@@ -401,28 +524,27 @@ class _ScannerOverlayPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
-    final double cornerLength = 30.0;
-    
-    // Top Left
-    canvas.drawLine(const Offset(0, 0), Offset(cornerLength, 0), paint);
-    canvas.drawLine(const Offset(0, 0), Offset(0, cornerLength), paint);
-    
-    // Top Right
-    canvas.drawLine(Offset(size.width, 0), Offset(size.width - cornerLength, 0), paint);
-    canvas.drawLine(Offset(size.width, 0), Offset(size.width, cornerLength), paint);
+    const double l = 30.0;
 
-    // Bottom Left
-    canvas.drawLine(Offset(0, size.height), Offset(cornerLength, size.height), paint);
-    canvas.drawLine(Offset(0, size.height), Offset(0, size.height - cornerLength), paint);
-
-    // Bottom Right
-    canvas.drawLine(Offset(size.width, size.height), Offset(size.width - cornerLength, size.height), paint);
-    canvas.drawLine(Offset(size.width, size.height), Offset(size.width, size.height - cornerLength), paint);
+    canvas.drawLine(Offset.zero, Offset(l, 0), paint);
+    canvas.drawLine(Offset.zero, Offset(0, l), paint);
+    canvas.drawLine(Offset(size.width, 0), Offset(size.width - l, 0), paint);
+    canvas.drawLine(Offset(size.width, 0), Offset(size.width, l), paint);
+    canvas.drawLine(
+        Offset(0, size.height), Offset(l, size.height), paint);
+    canvas.drawLine(
+        Offset(0, size.height), Offset(0, size.height - l), paint);
+    canvas.drawLine(Offset(size.width, size.height),
+        Offset(size.width - l, size.height), paint);
+    canvas.drawLine(Offset(size.width, size.height),
+        Offset(size.width, size.height - l), paint);
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+
+// ── Animated Scanner Laser ────────────────────────────────────────────────────
 
 class _AnimatedScannerLaser extends StatefulWidget {
   final Color color;
@@ -444,7 +566,6 @@ class _AnimatedScannerLaserState extends State<_AnimatedScannerLaser>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
-    
     _animation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
     );
@@ -462,13 +583,13 @@ class _AnimatedScannerLaserState extends State<_AnimatedScannerLaser>
       animation: _animation,
       builder: (context, child) {
         return Positioned(
-          top: 10 + (_animation.value * 198), // 220 box size - margins
+          top: 10 + (_animation.value * 198),
           left: 20,
           right: 20,
           child: Container(
             height: 2,
             decoration: BoxDecoration(
-              color: widget.color.withValues(alpha: 0.8),
+              color: widget.color.withOpacity(0.8),
               boxShadow: [
                 BoxShadow(
                   color: widget.color,
