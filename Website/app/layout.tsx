@@ -3,6 +3,7 @@ import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import NavBar from '@/components/NavBar'
 import Footer from '@/components/Footer'
+import BackToTop from '@/components/BackToTop'
 import './globals.css'
 import { SmoothScroll } from '@/components/SmoothScroll'
 
@@ -39,6 +40,7 @@ export default function RootLayout({
           <NavBar />
           <main>{children}</main>
           <Footer />
+          <BackToTop />
         </SmoothScroll>
       </body>
     </html>
