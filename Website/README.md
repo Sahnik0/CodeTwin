@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CodeTwin Website
+
+A modern, high-performance, and visually stunning landing page built for **CodeTwin** — the premier terminal-first AI coding agent.
+
+## Technology Stack
+
+- **Framework**: [Next.js 14](https://nextjs.org) (App Router architecture)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Animation Engine**: [Framer Motion](https://www.framer.com/motion/)
+- **Scroll Physics**: [Lenis](https://lenis.studiofreight.com/) (Fluid smooth scrolling matrix)
+- **Typography**: [JetBrains Mono](https://fonts.google.com/specimen/JetBrains+Mono) (Applied globally via raw `<style>` HTML mapping)
+- **Icons**: [Lucide React](https://lucide.dev/)
+
+## Key Design & UX Features
+
+- **Velocity "Jelly" Scrolling**: High-performance framer hooks (`useVelocity`, `useTransform`) interpolating user scroll speed into physical element skews and delays.
+- **Interactive BorderGlow API**: Custom GPU-accelerated mouse-tracking edge illumination mapping to dynamic radial gradients.
+- **3D Parallax Viewports**: Hero-section implementations of layout perspective projections.
+- **Scroll Scrubbing Reveal**: Typography layers structurally tied to absolute wrapper boundaries for flawless textual reveals.
+- **GitHub Live Polling**: Dynamically fetching actual open-source repository structures while breaking manual statically cached boundaries.
 
 ## Getting Started
 
-First, run the development server:
+First, ensure all `node_modules` are properly pulled down:
+
+```bash
+npm install
+```
+
+Boot the local development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser. Core landing architecture flows through `app/page.tsx`, wrapped by the global root definitions residing in `app/layout.tsx`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Structural Decisions
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Absolute Google Fonts Handling**: We forcefully bypassed standard Next.js `localFont` loading caching constraints to ensure JetBrains Mono cascades down perfectly to all structural nodes.
+- **No Native `Geist` Loading**: Standard pre-configured `create-next-app` variable mappings were purged for a strict dark-mode `/` monospace aesthetic layout.
