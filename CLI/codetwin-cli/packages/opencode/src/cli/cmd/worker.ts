@@ -215,6 +215,9 @@ export const WorkerCommand = cmd({
             cwd,
             env,
             stdio: ["pipe", "pipe", "pipe"],
+            // On Windows, .cmd files must be launched via a shell
+            shell: process.platform === "win32",
+            windowsHide: true,
           })
         }
       } catch (error) {

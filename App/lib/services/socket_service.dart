@@ -48,21 +48,21 @@ class SocketService {
   ///
   /// Preferred: passes token as [Authorization: Bearer] header.
   /// Fallback: appends [?token=<clientToken>] query parameter.
-  void connect(String wsUrl, String clientToken, {String mobileDeviceId = ''}) {
+  void connect(String wsUrl, String clientToken, {String mobileDeviceId = '', bool isReconnect = false}) {
     _lastWsUrl = wsUrl;
     _lastToken = clientToken;
     _mobileDeviceId = mobileDeviceId;
     disconnect();
 
+    // Only reset the backoff counter on fresh manual connections,
+    // not on internal reconnect scheduling (so backoff actually grows).
+    if (!isReconnect) _reconnectAttempts = 0;
+
     try {
-      // Append token as query param — flutter web_socket_channel does not
-      // reliably support custom headers across all platforms, so the
-      // ?token= fallback (supported by the bridge server) is the safest path.
       final uri = _buildUri(wsUrl, clientToken);
       if (kDebugMode) debugPrint('[SocketService] Connecting to $uri');
 
       _channel = WebSocketChannel.connect(uri);
-      _reconnectAttempts = 0;
       _startPingTimer();
 
       // Request subscription immediately after connecting
@@ -264,11 +264,16 @@ class SocketService {
 
   void _startPingTimer() {
     _stopPingTimer();
-    // Server sends a ping every 15s. We just keep the timer alive to detect
-    // stale connections; actual keepalive is handled by the WS layer.
-    _pingTimer = Timer.periodic(const Duration(seconds: 25), (_) {
+    // Send a JSON ping every 20s to keep the Render WebSocket connection alive.
+    // Render's free tier closes idle WS connections after ~30s of no traffic.
+    _pingTimer = Timer.periodic(const Duration(seconds: 20), (_) {
       if (_channel != null) {
-        // No-op: the WS layer handles ping/pong transparently
+        try {
+          _channel!.sink.add(jsonEncode({'type': 'ping', 'ts': DateTime.now().millisecondsSinceEpoch}));
+          if (kDebugMode) debugPrint('[SocketService] Ping sent');
+        } catch (e) {
+          if (kDebugMode) debugPrint('[SocketService] Ping failed: $e');
+        }
       }
     });
   }
@@ -292,7 +297,7 @@ class SocketService {
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(Duration(seconds: delaySeconds), () {
       if (_lastWsUrl != null && _lastToken != null) {
-        connect(_lastWsUrl!, _lastToken!, mobileDeviceId: _mobileDeviceId);
+        connect(_lastWsUrl!, _lastToken!, mobileDeviceId: _mobileDeviceId, isReconnect: true);
       }
     });
   }

@@ -67,36 +67,39 @@ class _DaemonStatusBarState extends ConsumerState<DaemonStatusBar>
         break;
     }
 
-    return SafeArea(
-      child: GestureDetector(
-        onTap: () {
-          // Tap to reconnect
-          if (conn.deviceId != null && conn.signalingUrl.isNotEmpty) {
-            SocketService().disconnect(); // Clear current
-            SocketService().connect(conn.signalingUrl, conn.deviceId!);
-          }
-        },
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardTheme.color?.withValues(alpha: 0.9),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: 10,
-                spreadRadius: 1,
-              )
-            ],
-            border: Border.all(
-              color: color.withValues(alpha: 0.5),
-              width: 1.5,
-            ),
+    return GestureDetector(
+      onTap: () {
+        // Tap to reconnect — use clientToken not deviceId!
+        final token = conn.clientToken;
+        if (token != null && token.isNotEmpty && conn.wsUrl.isNotEmpty) {
+          SocketService().disconnect();
+          SocketService().connect(
+            conn.wsUrl,
+            token,
+            mobileDeviceId: conn.mobileDeviceId ?? '',
+          );
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardTheme.color?.withValues(alpha: 0.9),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 10,
+              spreadRadius: 1,
+            )
+          ],
+          border: Border.all(
+            color: color.withValues(alpha: 0.5),
+            width: 1.5,
           ),
-          padding: const EdgeInsets.all(8),
-          child: RotationTransition(
-            turns: isConnecting ? _spinController : const AlwaysStoppedAnimation(0),
-            child: Icon(icon, color: color, size: 18),
-          ),
+        ),
+        padding: const EdgeInsets.all(8),
+        child: RotationTransition(
+          turns: isConnecting ? _spinController : const AlwaysStoppedAnimation(0),
+          child: Icon(icon, color: color, size: 18),
         ),
       ),
     );

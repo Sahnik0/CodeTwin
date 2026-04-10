@@ -23,7 +23,9 @@ class DaemonActions {
   SessionState get session =>
       ref.read(sessionProvider).valueOrNull ?? SessionState.empty;
 
-  bool get isDaemonConnected => connection.daemonConnected;
+  // Check the live WS channel, not the provider flag which can lag behind
+  // reconnect cycles. This ensures submitTask works as soon as the WS is open.
+  bool get isDaemonConnected => socketService.isConnected;
 
   // ── internal ─────────────────────────────────────────────────────────────
 
@@ -64,7 +66,16 @@ class DaemonActions {
     }
     socketService.sendBridgeCommand({
       'type': 'cliExecute',
-      'args': ['run', '--task', task],
+      // run [message..] — task is a positional arg, NOT --task (flag doesn't exist)
+      // --dangerously-skip-permissions lets it run autonomously without stalling
+      // --dependence-level maps our UI level 1-5 to the CLI autonomy level
+      'args': [
+        'run',
+        task,
+        '--dangerously-skip-permissions',
+        '--dependence-level',
+        session.dependenceLevel.toString(),
+      ],
       'env': {'CODETWIN_DEPENDENCE_LEVEL': session.dependenceLevel.toString()},
     });
   }

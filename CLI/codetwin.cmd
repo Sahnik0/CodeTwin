@@ -5,7 +5,6 @@ set "ROOT=%~dp0"
 if "%ROOT:~-1%"=="\" set "ROOT=%ROOT:~0,-1%"
 
 set "APP=%ROOT%\codetwin-cli\packages\opencode"
-set "REMOTE_SERVER_DIR=%ROOT%\codetwin-remote-server"
 
 if exist "%USERPROFILE%\.bun\bin\bun.exe" (
   set "BUN=%USERPROFILE%\.bun\bin\bun.exe"
@@ -35,6 +34,11 @@ if not exist "%APP%\node_modules\" (
   echo Installing dependencies...
   "%BUN%" install --cwd "%APP%"
   if %errorlevel% neq 0 exit /b %errorlevel%
+)
+
+if "%~1"=="worker" (
+  "%BUN%" run --cwd "%APP%" dev worker --codetwin-bin "%ROOT%\codetwin.cmd" %2 %3 %4 %5 %6 %7 %8 %9
+  exit /b %errorlevel%
 )
 
 if "%~1"=="" (
