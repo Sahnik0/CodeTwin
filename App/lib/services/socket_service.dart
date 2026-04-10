@@ -1,110 +1,146 @@
-/// Singleton socket.io client wrapper.
+/// WebSocket channel wrapper for communicating with server.ts bridge.
 ///
-/// The rest of the app never creates sockets directly — everything
-/// goes through this service.
+/// Converts raw bridge events handling stdout/stderr and attempts to
+/// parse JSON payload lines back into AgentMessages for the app.
 
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:web_socket_channel/web_socket_channel.dart';
 import '../models/agent_message.dart';
+import '../models/bridge_event.dart';
 import '../utils/validators.dart';
 
 typedef MessageHandler = void Function(AgentMessage msg);
+typedef BridgeEventHandler = void Function(BridgeEvent event);
 
 class SocketService {
-  // ── singleton ────────────────────────────────────────────────────────────
   static final SocketService _instance = SocketService._internal();
   factory SocketService() => _instance;
   SocketService._internal();
 
-  // ── private state ────────────────────────────────────────────────────────
-  IO.Socket? _socket;
+  WebSocketChannel? _channel;
   String _deviceId = '';
+  
   final Map<MessageType, List<MessageHandler>> _handlers = {};
+  final List<BridgeEventHandler> _bridgeHandlers = [];
+  
   Timer? _pingTimer;
-
-  // Reconnect backoff
-  int _reconnectAttempts = 0;
   Timer? _reconnectTimer;
+  int _reconnectAttempts = 0;
   String? _lastSignalingUrl;
 
-  // Presence callbacks
   VoidCallback? onPaired;
   VoidCallback? onNoPair;
   VoidCallback? onDisconnected;
   VoidCallback? onConnected;
 
-  // ── public API ───────────────────────────────────────────────────────────
+  String? _activeJobId;
+  String? get activeJobId => _activeJobId;
 
-  bool get isConnected => _socket?.connected ?? false;
+  bool get isConnected => _channel != null;
   String get deviceId => _deviceId;
 
   void connect(String signalingUrl, String deviceId) {
     _lastSignalingUrl = signalingUrl;
     _deviceId = deviceId;
-
-    // Tear down any existing socket
     disconnect();
 
-    _socket = IO.io(
-      signalingUrl,
-      IO.OptionBuilder()
-          .setTransports(['websocket'])
-          .disableAutoConnect()
-          .build(),
-    );
-
-    // ── lifecycle events ─────────────────────────────────────────────────
-    _socket!.onConnect((_) {
-      debugPrint('[SocketService] Connected to $signalingUrl');
+    try {
+      _channel = WebSocketChannel.connect(Uri.parse(signalingUrl));
+      
       _reconnectAttempts = 0;
-      _socket!.emit('register', {'deviceId': deviceId, 'type': 'client'});
       _startPingTimer();
       onConnected?.call();
-    });
+      
+      // Request a generic subscribe
+      _channel!.sink.add(jsonEncode({'type': 'subscribe'}));
 
-    _socket!.on('message', (data) {
-      if (data is! Map<String, dynamic>) return;
-      try {
-        final msg = parseAgentMessage(data);
-        final list = _handlers[msg.type];
-        if (list != null) {
-          for (final h in list) {
-            h(msg);
+      _channel!.stream.listen(
+        (message) {
+          if (message is! String) return;
+          try {
+            final decoded = jsonDecode(message);
+            if (decoded is! Map<String, dynamic>) return;
+            
+            final event = BridgeEvent.fromJson(decoded);
+            _handleBridgeEvent(event);
+          } catch (e) {
+             if (kDebugMode) debugPrint('[SocketService] Parse error: $e');
           }
+        },
+        onDone: () {
+          _handleDisconnect();
+        },
+        onError: (error) {
+          if (kDebugMode) debugPrint('[SocketService] Error: $error');
+          _handleDisconnect();
+        },
+      );
+    } catch (e) {
+      _handleDisconnect();
+    }
+  }
+
+  void _handleBridgeEvent(BridgeEvent event) {
+    // Notify low-level bridge listeners
+    for (final h in _bridgeHandlers) {
+      h(event);
+    }
+
+    if (event.type == BridgeEventType.start || event.type == BridgeEventType.accepted) {
+      _activeJobId = event.jobId ?? event.raw['job']?['id'];
+    }
+
+    // Attempt to transparently route CLI JSON output back to AgentMessages
+    if ((event.type == BridgeEventType.stdout || event.type == BridgeEventType.stderr) && event.text != null) {
+      final text = event.text!.trim();
+      
+      // If it looks like JSON from the agent, parse it
+      if (text.startsWith('{') && text.endsWith('}')) {
+        try {
+          final decoded = jsonDecode(text);
+          if (decoded is Map<String, dynamic> && decoded.containsKey('type')) {
+            final msg = parseAgentMessage(decoded);
+            final list = _handlers[msg.type];
+            if (list != null) {
+              for (final h in list) h(msg);
+            }
+          }
+        } catch (_) {
+          _routeRawLog(text, event.type == BridgeEventType.stderr);
         }
-      } on ValidationException catch (e) {
-        if (kDebugMode) debugPrint('[SocketService] Bad message: $e');
-        // Release mode: silently discard
+      } else {
+        _routeRawLog(text, event.type == BridgeEventType.stderr);
       }
-    });
+    }
+  }
 
-    _socket!.on('paired', (_) {
-      debugPrint('[SocketService] Daemon paired');
-      onPaired?.call();
-    });
+  void _routeRawLog(String text, bool isError) {
+    if (text.trim().isEmpty) return;
+    final msg = AgentMessage(
+      type: MessageType.agentLog,
+      sessionId: '',
+      projectId: '',
+      deviceId: _deviceId,
+      timestamp: DateTime.now().toIso8601String(),
+      payload: {
+        'level': isError ? 'error' : 'info',
+        'message': text,
+      },
+    );
+    final list = _handlers[MessageType.agentLog];
+    if (list != null) {
+      for (final h in list) h(msg);
+    }
+  }
 
-    _socket!.on('no_pair', (_) {
-      debugPrint('[SocketService] No pair — daemon not online');
-      onNoPair?.call();
-    });
-
-    _socket!.on('pong', (_) {
-      // Keepalive acknowledged — reset reconnect timer
-    });
-
-    _socket!.onDisconnect((_) {
-      if (kDebugMode) debugPrint('[SocketService] Disconnected');
-      _stopPingTimer();
-      onDisconnected?.call();
-      _scheduleReconnect();
-    });
-
-    _socket!.onError((error) {
-      if (kDebugMode) debugPrint('[SocketService] Error: $error');
-    });
-
-    _socket!.connect();
+  void _handleDisconnect() {
+    if (kDebugMode) debugPrint('[SocketService] Disconnected');
+    _stopPingTimer();
+    _channel = null;
+    onDisconnected?.call();
+    _scheduleReconnect();
   }
 
   void disconnect() {
@@ -112,33 +148,49 @@ class SocketService {
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     _reconnectAttempts = 0;
-    _socket?.dispose();
-    _socket = null;
+    _channel?.sink.close();
+    _channel = null;
   }
 
   void send(AgentMessage msg) {
-    if (_socket == null || !isConnected) {
-      debugPrint('[SocketService] Cannot send — not connected');
+    // Legacy support: encode legacy AgentMessage to active job stdin
+    if (_channel == null || _activeJobId == null) {
+      debugPrint('[SocketService] Cannot send legacy msg: no active job or socket');
       return;
     }
-    _socket!.emit('message', msg.toJson());
+    
+    sendInput(jsonEncode(msg.toJson()));
   }
 
-  /// Register a handler for a specific [MessageType].
-  /// Returns an unsubscribe function.
+  void sendBridgeCommand(Map<String, dynamic> cmd) {
+    if (_channel == null) return;
+    _channel!.sink.add(jsonEncode(cmd));
+  }
+
+  void sendInput(String text, {bool appendNewline = true}) {
+    if (_activeJobId == null) return;
+    sendBridgeCommand({
+      'type': 'input',
+      'jobId': _activeJobId,
+      'text': text,
+      'appendNewline': appendNewline,
+    });
+  }
+
   VoidCallback on(MessageType type, MessageHandler handler) {
     _handlers.putIfAbsent(type, () => []).add(handler);
     return () => _handlers[type]?.remove(handler);
   }
 
-  // ── keepalive ──────────────────────────────────────────────────────────
+  VoidCallback onBridgeEvent(BridgeEventHandler handler) {
+    _bridgeHandlers.add(handler);
+    return () => _bridgeHandlers.remove(handler);
+  }
 
   void _startPingTimer() {
     _stopPingTimer();
     _pingTimer = Timer.periodic(const Duration(seconds: 25), (_) {
-      if (isConnected) {
-        _socket!.emit('ping');
-      }
+      // Server.ts relies on HTTP/WS ping-pong invisibly, but we can send an empty object or ping to keepalive
     });
   }
 
@@ -147,16 +199,13 @@ class SocketService {
     _pingTimer = null;
   }
 
-  // ── reconnect with exponential backoff ─────────────────────────────────
-
   void _scheduleReconnect() {
     if (_lastSignalingUrl == null) return;
 
     final delaySeconds = _backoffDelay(_reconnectAttempts);
     _reconnectAttempts++;
 
-    debugPrint('[SocketService] Reconnecting in ${delaySeconds}s '
-        '(attempt $_reconnectAttempts)');
+    debugPrint('[SocketService] Reconnecting in \${delaySeconds}s');
 
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(Duration(seconds: delaySeconds), () {
@@ -166,9 +215,8 @@ class SocketService {
     });
   }
 
-  /// 1s → 2s → 4s → 8s → … → max 60s
   int _backoffDelay(int attempt) {
-    final delay = 1 << attempt; // 2^attempt
+    final delay = 1 << attempt;
     return delay > 60 ? 60 : delay;
   }
 }

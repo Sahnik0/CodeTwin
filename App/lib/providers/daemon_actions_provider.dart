@@ -62,13 +62,22 @@ class DaemonActions {
           ));
       return;
     }
-    _send(MessageType.taskSubmit, {
-      'task': task,
-      'dependenceLevel': session.dependenceLevel,
+    socketService.sendBridgeCommand({
+      'type': 'cliExecute',
+      'args': ['run', '--task', task],
+      'env': {'CODETWIN_DEPENDENCE_LEVEL': session.dependenceLevel.toString()},
     });
   }
 
-  void cancelTask() => _send(MessageType.taskCancel, {});
+  void cancelTask() {
+    if (socketService.activeJobId != null) {
+      socketService.sendBridgeCommand({
+        'type': 'terminate',
+        'jobId': socketService.activeJobId,
+        'signal': 'SIGTERM',
+      });
+    }
+  }
 
   void approve(String awaitingResponseId) => _send(
         MessageType.userApprove,
