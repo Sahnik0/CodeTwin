@@ -4,16 +4,16 @@ title: Remote Control
 
 # Remote Control
 
-DevTwin supports remote control via an end-to-end encrypted relay. You can submit tasks, approve pre-flight maps, and watch the agent log stream from your phone.
+CodeTwin supports remote control via an end-to-end encrypted relay. You can submit tasks, approve pre-flight maps, and watch the agent log stream from your phone.
 
 ## Setup
 
-The remote control feature requires the DevTwin mobile app (iOS / Android) and the desktop daemon to be running.
+The remote control feature requires the CodeTwin mobile app (iOS / Android) and the desktop daemon to be running.
 
-Start DevTwin with the daemon enabled:
+Start CodeTwin with the daemon enabled:
 
 ```bash
-devtwin start --daemon
+CodeTwin start --daemon
 ```
 
 Or enable it in config:
@@ -27,12 +27,12 @@ Or enable it in config:
 
 ## Mobile pairing
 
-1. Open the DevTwin mobile app
+1. Open the CodeTwin mobile app
 2. Tap "Pair a device"
-3. Scan the QR code shown by running `devtwin connect` in your terminal — or visit `/connect` in a browser on the same machine
+3. Scan the QR code shown by running `CodeTwin connect` in your terminal — or visit `/connect` in a browser on the same machine
 4. Confirm the pairing on both devices
 
-The device ID is derived from a random 64-bit token generated on first run. It is stored in `.devtwin/daemon.port`.
+The device ID is derived from a random 64-bit token generated on first run. It is stored in `.CodeTwin/daemon.port`.
 
 ## What you can do remotely
 
@@ -44,14 +44,14 @@ The device ID is derived from a random 64-bit token generated on first run. It i
 
 ## Relay server
 
-DevTwin uses a relay server to bridge the desktop daemon and the mobile app through NAT/firewalls. The relay is a stateless message forwarder — it never stores your code, file contents, or task details.
+CodeTwin uses a relay server to bridge the desktop daemon and the mobile app through NAT/firewalls. The relay is a stateless message forwarder — it never stores your code, file contents, or task details.
 
 Messages are end-to-end encrypted using a shared key derived from the device pairing handshake (ECDH + AES-256-GCM).
 
 You can run your own relay:
 
 ```bash
-devtwin relay --port 7484
+CodeTwin relay --port 7484
 ```
 
 And point clients to it in config:

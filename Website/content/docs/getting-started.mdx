@@ -4,26 +4,26 @@ title: Getting Started
 
 # Getting Started
 
-DevTwin is a terminal-first AI coding agent that runs on your machine. This guide walks you through installation, initialization, and your first task.
+CodeTwin is a terminal-first AI coding agent that runs on your machine. This guide walks you through installation, initialization, and your first task.
 
 ## Installation
 
-Install DevTwin globally via npm or the shell installer:
+Install CodeTwin globally via npm or the shell installer:
 
 ```bash
-curl -fsSL https://devtwin.dev/install.sh | bash
+curl -fsSL https://CodeTwin.dev/install.sh | bash
 ```
 
 Or with npm:
 
 ```bash
-npm install -g devtwin
+npm install -g CodeTwin
 ```
 
 After installation, verify with:
 
 ```bash
-devtwin --version
+CodeTwin --version
 ```
 
 ## Init wizard
@@ -32,24 +32,24 @@ Inside your project directory, run the initialization wizard:
 
 ```bash
 cd your-project
-devtwin config init
+CodeTwin config init
 ```
 
 The wizard will prompt you for:
 
 - **LLM provider** — choose from OpenAI, Anthropic, Groq, Gemini, Mistral, Ollama, Azure, and others
 - **Model** — the specific model to use for that provider
-- **API key** — stored locally in `~/.devtwin/config.json`, never uploaded
+- **API key** — stored locally in `~/.CodeTwin/config.json`, never uploaded
 - **Dependence level** — how autonomous the agent should be (1–5, default 3)
 
-Config is written to `.devtwin/config.json` in your project root. You can edit it directly at any time.
+Config is written to `.CodeTwin/config.json` in your project root. You can edit it directly at any time.
 
 ## First task
 
-Start the DevTwin TUI:
+Start the CodeTwin TUI:
 
 ```bash
-devtwin start
+CodeTwin start
 ```
 
 This opens the interactive terminal UI. Type a task in natural language:
@@ -58,7 +58,7 @@ This opens the interactive terminal UI. Type a task in natural language:
 refactor auth module to use JWT
 ```
 
-DevTwin will:
+CodeTwin will:
 
 1. Analyze the codebase
 2. Build a pre-flight impact map
@@ -68,7 +68,7 @@ DevTwin will:
 
 ## Project configuration
 
-The `.devtwin/config.json` file controls per-project settings:
+The `.CodeTwin/config.json` file controls per-project settings:
 
 ```json
 {
@@ -79,4 +79,4 @@ The `.devtwin/config.json` file controls per-project settings:
 }
 ```
 
-Global defaults live in `~/.devtwin/config.json`. Project config overrides global.
+Global defaults live in `~/.CodeTwin/config.json`. Project config overrides global.

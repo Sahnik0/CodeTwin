@@ -6,21 +6,21 @@ import Footer from '@/components/Footer'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'DevTwin — Terminal AI coding agent',
+  title: 'CodeTwin — Terminal AI coding agent',
   description:
     'A terminal-first AI coding agent. Runs on your machine. BYOK. Five autonomy levels. Twin memory per project.',
   openGraph: {
-    title: 'DevTwin',
+    title: 'CodeTwin',
     description: 'Terminal AI coding agent. Your machine. Your rules.',
     type: 'website',
-    url: 'https://devtwin.dev',
+    url: 'https://CodeTwin.dev',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'DevTwin — Terminal AI coding agent',
+    title: 'CodeTwin — Terminal AI coding agent',
     description: 'Terminal AI coding agent. Your machine. Your rules.',
   },
-  metadataBase: new URL('https://devtwin.dev'),
+  metadataBase: new URL('https://CodeTwin.dev'),
 }
 
 export default function RootLayout({

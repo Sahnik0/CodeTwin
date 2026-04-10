@@ -35,15 +35,14 @@ export default function ProviderCard({
           <span className="text-sm font-medium text-text-primary">{name}</span>
           {badge && (
             <span
-              className={`text-xs px-1.5 py-0.5 rounded font-mono ${
-                badge === 'Local'
+              className={`text-xs px-1.5 py-0.5 rounded font-mono ${badge === 'Local'
                   ? 'bg-success/10 text-success border border-success/20'
                   : badge === 'Fast'
-                  ? 'bg-warning/10 text-warning border border-warning/20'
-                  : badge === 'Enterprise'
-                  ? 'bg-accent/10 text-accent border border-accent/20'
-                  : 'bg-border-default text-text-muted border border-border-default'
-              }`}
+                    ? 'bg-warning/10 text-warning border border-warning/20'
+                    : badge === 'Enterprise'
+                      ? 'bg-accent/10 text-accent border border-accent/20'
+                      : 'bg-border-default text-text-muted border border-border-default'
+                }`}
             >
               {badge}
             </span>

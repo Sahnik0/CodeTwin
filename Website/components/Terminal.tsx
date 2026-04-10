@@ -11,7 +11,7 @@ interface TerminalProps {
 
 export default function Terminal({
   lines,
-  title = 'devtwin',
+  title = 'CodeTwin',
   animateIn = true,
 }: TerminalProps) {
   const [visibleCount, setVisibleCount] = useState(animateIn ? 0 : lines.length)

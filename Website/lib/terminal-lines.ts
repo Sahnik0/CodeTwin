@@ -17,10 +17,10 @@ const C = {
 } as const
 
 export const terminalDemoLines: TerminalLine[] = [
-  { text: '$ devtwin task "refactor auth module to use JWT"', color: C.primary, delay: 0 },
+  { text: '$ CodeTwin task "refactor auth module to use JWT"', color: C.primary, delay: 0 },
   { text: '', delay: 80 },
-  { text: '● DevTwin  analyzing codebase...', color: C.secondary, delay: 60 },
-  { text: '● DevTwin  building pre-flight map', color: C.secondary, delay: 60 },
+  { text: '● CodeTwin  analyzing codebase...', color: C.secondary, delay: 60 },
+  { text: '● CodeTwin  building pre-flight map', color: C.secondary, delay: 60 },
   { text: '', delay: 80 },
   { text: '┌─ PRE-FLIGHT MAP ─────────────────────────┐', color: C.box, delay: 60 },
   { text: '│ Blast radius: HIGH                        │', color: C.box, delay: 40 },
@@ -43,10 +43,10 @@ export const terminalDemoLines: TerminalLine[] = [
   { text: '', delay: 100 },
   { text: '> A', color: C.primary, delay: 800 },
   { text: '', delay: 60 },
-  { text: '● DevTwin  installing dependencies...', color: C.secondary, delay: 80 },
+  { text: '● CodeTwin  installing dependencies...', color: C.secondary, delay: 80 },
   { text: '✓ npm install jsonwebtoken  (2.1s)', color: C.success, delay: 600 },
-  { text: '● DevTwin  writing src/auth/index.ts', color: C.secondary, delay: 60 },
-  { text: '● DevTwin  writing src/auth/middleware.ts', color: C.secondary, delay: 60 },
-  { text: '● DevTwin  removing src/auth/legacy-sessions.ts', color: C.secondary, delay: 60 },
+  { text: '● CodeTwin  writing src/auth/index.ts', color: C.secondary, delay: 60 },
+  { text: '● CodeTwin  writing src/auth/middleware.ts', color: C.secondary, delay: 60 },
+  { text: '● CodeTwin  removing src/auth/legacy-sessions.ts', color: C.secondary, delay: 60 },
   { text: '✓ Task complete  3 files changed · 1 decision recorded', color: C.success, delay: 400 },
 ]

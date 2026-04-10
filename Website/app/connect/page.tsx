@@ -28,7 +28,7 @@ export default function ConnectPage() {
       })
   }, [])
 
-  const pairingUrl = `devtwin://pair/${deviceId}`
+  const pairingUrl = `CodeTwin://pair/${deviceId}`
 
   return (
     <div className="min-h-screen flex items-center justify-center px-6 pt-14 bg-background">
@@ -36,7 +36,7 @@ export default function ConnectPage() {
         {/* Card */}
         <div className="bg-surface border border-border-default rounded-lg p-8 flex flex-col items-center gap-6">
           {/* Wordmark */}
-          <span className="font-mono text-sm text-text-primary">devtwin</span>
+          <span className="font-mono text-sm text-text-primary">CodeTwin</span>
 
           {/* Heading */}
           <div className="text-center">
@@ -99,7 +99,7 @@ export default function ConnectPage() {
         <p className="mt-5 text-center text-xs text-text-muted">
           Run{' '}
           <code className="font-mono bg-surface-elevated border border-border-default rounded px-1.5 py-0.5">
-            devtwin connect
+            CodeTwin connect
           </code>{' '}
           in your terminal to start the daemon.
         </p>

@@ -20,6 +20,8 @@ const config: Config = {
         'text-muted': '#555555',
         accent: '#7c3aed',
         'accent-glow': 'rgba(124, 58, 237, 0.15)',
+        teal: '#2dd4bf',
+        'teal-glow': 'rgba(45, 212, 191, 0.15)',
         success: '#22c55e',
         warning: '#f59e0b',
         danger: '#ef4444',

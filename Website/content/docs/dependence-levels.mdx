@@ -4,14 +4,14 @@ title: Dependence Levels
 
 # Dependence Levels
 
-DevTwin has five autonomy levels. You set the level once in config, and can change it mid-task with `devtwin level <n>`.
+CodeTwin has five autonomy levels. You set the level once in config, and can change it mid-task with `CodeTwin level <n>`.
 
 ## Level 1 — Full supervision
 
 Ask before every file write, delete, or shell command. Nothing executes without your approval. Best for unfamiliar codebases or high-risk refactors.
 
 ```bash
-devtwin level 1
+CodeTwin level 1
 ```
 
 ## Level 2 — Reads are free
@@ -19,7 +19,7 @@ devtwin level 1
 Silent on reads and status checks. Always asks before writes, deletes, or installs. You see everything that changes but don't get interrupted on analysis actions.
 
 ```bash
-devtwin level 2
+CodeTwin level 2
 ```
 
 ## Level 3 — Smart checkpoints (default)
@@ -27,7 +27,7 @@ devtwin level 2
 Executes clear single-path actions automatically. Asks when multiple valid approaches exist, or when blast radius is HIGH. The balanced default for most workflows.
 
 ```bash
-devtwin level 3
+CodeTwin level 3
 ```
 
 ## Level 4 — Destructive only
@@ -35,7 +35,7 @@ devtwin level 3
 Runs freely until something gets deleted, overwritten, deployed, or pushed. Then it stops and asks. Good for greenfield code where you trust early-stage writes.
 
 ```bash
-devtwin level 4
+CodeTwin level 4
 ```
 
 ## Level 5 — Full delegation
@@ -43,7 +43,7 @@ devtwin level 4
 Execute and report. Interrupts only if the delegation budget allows and task complexity is critical. Use for trusted, well-constrained tasks in stable codebases.
 
 ```bash
-devtwin level 5
+CodeTwin level 5
 ```
 
 ## Changing level mid-task

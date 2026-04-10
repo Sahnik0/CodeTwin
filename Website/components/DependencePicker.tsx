@@ -58,11 +58,10 @@ export default function DependencePicker({ defaultLevel = 3 }: DependencePickerP
             onClick={() => setSelected(l.level)}
             aria-label={`Select level ${l.level}: ${l.name}`}
             aria-pressed={selected === l.level}
-            className={`w-10 h-10 rounded-full border text-sm font-mono font-medium transition-all duration-200 focus-visible:outline-accent ${
-              selected === l.level
+            className={`w-10 h-10 rounded-full border text-sm font-mono font-medium transition-all duration-200 focus-visible:outline-accent ${selected === l.level
                 ? 'border-accent text-accent bg-accent-glow'
                 : 'border-border-default text-text-muted hover:border-border-hover hover:text-text-secondary'
-            }`}
+              }`}
           >
             {l.level}
           </button>
@@ -103,9 +102,9 @@ export default function DependencePicker({ defaultLevel = 3 }: DependencePickerP
       {/* CLI shortcut */}
       <div className="mt-4 flex items-center gap-3">
         <code className="font-mono text-sm text-text-secondary">
-          devtwin level {selected}
+          CodeTwin level {selected}
         </code>
-        <CopyButton text={`devtwin level ${selected}`} label={`Copy devtwin level ${selected} command`} />
+        <CopyButton text={`CodeTwin level ${selected}`} label={`Copy CodeTwin level ${selected} command`} />
       </div>
     </div>
   )

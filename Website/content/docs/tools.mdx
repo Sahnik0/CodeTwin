@@ -4,7 +4,7 @@ title: Tools
 
 # Tools
 
-DevTwin has a defined set of tools it uses to interact with your codebase. Each tool corresponds to a specific class of action. You see every tool invocation in the pre-flight map before it runs.
+CodeTwin has a defined set of tools it uses to interact with your codebase. Each tool corresponds to a specific class of action. You see every tool invocation in the pre-flight map before it runs.
 
 ## read
 
@@ -14,7 +14,7 @@ Reads the content of a file. Never modifies anything.
 read(path: string): string
 ```
 
-Triggered when DevTwin needs to understand existing code. Silent at all dependence levels.
+Triggered when CodeTwin needs to understand existing code. Silent at all dependence levels.
 
 ## write
 
@@ -34,7 +34,7 @@ Applies a targeted edit to an existing file: insert, replace, or delete a range 
 edit(path: string, range: LineRange, replacement: string): void
 ```
 
-More surgical than `write` — DevTwin prefers `edit` when changing existing files to reduce blast radius.
+More surgical than `write` — CodeTwin prefers `edit` when changing existing files to reduce blast radius.
 
 ## bash
 
@@ -61,7 +61,7 @@ git.push(remote?: string, branch?: string): void
 
 ## Custom tools
 
-You can define project-specific tools in `.devtwin/tools.json`. Custom tools are shell commands wrapped with a name and description. DevTwin will use them when the task matches the described capability.
+You can define project-specific tools in `.CodeTwin/tools.json`. Custom tools are shell commands wrapped with a name and description. CodeTwin will use them when the task matches the described capability.
 
 ```json
 [

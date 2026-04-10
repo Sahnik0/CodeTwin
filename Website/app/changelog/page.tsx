@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Changelog — DevTwin',
-  description: 'Release history for DevTwin.',
+  title: 'Changelog — CodeTwin',
+  description: 'Release history for CodeTwin.',
 }
 
 const changelog = `
@@ -11,7 +11,7 @@ v0.4.0 — 2026-03-15
 - Added remote control via encrypted relay
 - Mobile app: approve pre-flight maps from phone
 - New dependence level 4 (destructive-only)
-- devtwin connect — QR pairing flow
+- CodeTwin connect — QR pairing flow
 - Twin memory: failure pattern tracking
 
 v0.3.2 — 2026-02-28
@@ -26,8 +26,8 @@ v0.3.0 — 2026-02-10
 - Twin memory: per-project SQLite storage
 - Constraints system: add/remove/list active rules
 - Decision recording with reason tracking
-- devtwin memory show / reset commands
-- Breaking: config format updated — run devtwin config init to migrate
+- CodeTwin memory show / reset commands
+- Breaking: config format updated — run CodeTwin config init to migrate
 
 v0.2.0 — 2026-01-20
 ────────────────────
@@ -52,7 +52,7 @@ export default function ChangelogPage() {
         <div className="mb-10">
           <h1 className="text-2xl font-medium text-text-primary mb-2">Changelog</h1>
           <p className="text-sm text-text-secondary">
-            All notable changes to DevTwin. Dates are UTC.
+            All notable changes to CodeTwin. Dates are UTC.
           </p>
         </div>
 
@@ -62,7 +62,7 @@ export default function ChangelogPage() {
 
         <div className="mt-12 pt-8 border-t border-border-default">
           <a
-            href="https://github.com/devtwin/devtwin/releases"
+            href="https://github.com/CodeTwin/CodeTwin/releases"
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs text-text-muted hover:text-text-secondary transition-colors"

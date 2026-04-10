@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# DevTwin installer
-# Usage: curl -fsSL https://devtwin.dev/install.sh | bash
+# CodeTwin installer
+# Usage: curl -fsSL https://CodeTwin.dev/install.sh | bash
 
 set -euo pipefail
 
-REPO="devtwin/devtwin"
+REPO="CodeTwin/CodeTwin"
 INSTALL_DIR="/usr/local/bin"
-BINARY_NAME="devtwin"
+BINARY_NAME="CodeTwin"
 
 detect_os() {
   case "$(uname -s)" in
@@ -31,7 +31,7 @@ main() {
 
   if [ "$OS" = "unsupported" ] || [ "$ARCH" = "unsupported" ]; then
     echo "Unsupported platform. Install via npm instead:"
-    echo "  npm install -g devtwin"
+    echo "  npm install -g CodeTwin"
     exit 1
   fi
 
@@ -39,15 +39,15 @@ main() {
   echo ""
   echo "This is a stub installer. The npm package is the canonical install method:"
   echo ""
-  echo "  npm install -g devtwin"
+  echo "  npm install -g CodeTwin"
   echo ""
   echo "Or use your preferred package manager:"
-  echo "  pnpm add -g devtwin"
-  echo "  bun add -g devtwin"
+  echo "  pnpm add -g CodeTwin"
+  echo "  bun add -g CodeTwin"
   echo ""
   echo "After installation:"
-  echo "  devtwin --version"
-  echo "  cd your-project && devtwin config init"
+  echo "  CodeTwin --version"
+  echo "  cd your-project && CodeTwin config init"
 }
 
 main "$@"

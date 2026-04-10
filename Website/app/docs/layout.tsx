@@ -94,7 +94,7 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
           {/* Edit on GitHub footer */}
           <div className="mt-16 pt-8 border-t border-border-default">
             <a
-              href="https://github.com/devtwin/devtwin/tree/main/docs"
+              href="https://github.com/CodeTwin/CodeTwin/tree/main/docs"
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-text-muted hover:text-text-secondary transition-colors"

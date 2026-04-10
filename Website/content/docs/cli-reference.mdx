@@ -4,100 +4,100 @@ title: CLI Reference
 
 # CLI Reference
 
-## devtwin start
+## CodeTwin start
 
 Start the interactive TUI.
 
 ```bash
-devtwin start [--daemon] [--level <1-5>]
+CodeTwin start [--daemon] [--level <1-5>]
 ```
 
 Options:
 - `--daemon` — also start the background daemon for remote control
 - `--level` — override the configured dependence level for this session
 
-## devtwin task
+## CodeTwin task
 
 Run a single task non-interactively.
 
 ```bash
-devtwin task "<description>" [--level <1-5>] [--yes]
+CodeTwin task "<description>" [--level <1-5>] [--yes]
 ```
 
 - `--yes` — auto-approve all pre-flight maps (equivalent to level 5 for this task)
 
-## devtwin config init
+## CodeTwin config init
 
 Run the interactive configuration wizard.
 
 ```bash
-devtwin config init
+CodeTwin config init
 ```
 
-## devtwin config show
+## CodeTwin config show
 
 Print the current effective configuration (project + global merged).
 
 ```bash
-devtwin config show
+CodeTwin config show
 ```
 
-## devtwin level
+## CodeTwin level
 
 Change the dependence level for the current project.
 
 ```bash
-devtwin level <1-5>
+CodeTwin level <1-5>
 ```
 
-## devtwin memory show
+## CodeTwin memory show
 
 Display the twin memory profile for the current project.
 
 ```bash
-devtwin memory show
+CodeTwin memory show
 ```
 
-## devtwin memory reset
+## CodeTwin memory reset
 
 Clear all twin memory for the current project.
 
 ```bash
-devtwin memory reset [--yes]
+CodeTwin memory reset [--yes]
 ```
 
-## devtwin connect
+## CodeTwin connect
 
 Show the device ID and QR code for mobile pairing. Starts the daemon if not running.
 
 ```bash
-devtwin connect
+CodeTwin connect
 ```
 
-## devtwin relay
+## CodeTwin relay
 
 Start a standalone relay server.
 
 ```bash
-devtwin relay [--port <port>]
+CodeTwin relay [--port <port>]
 ```
 
 Default port: 7484.
 
-## devtwin version
+## CodeTwin version
 
 Print the installed version.
 
 ```bash
-devtwin version
+CodeTwin version
 # or
-devtwin --version
+CodeTwin --version
 ```
 
-## devtwin help
+## CodeTwin help
 
 Print the full help text.
 
 ```bash
-devtwin help [command]
+CodeTwin help [command]
 ```

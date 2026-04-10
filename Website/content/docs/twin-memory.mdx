@@ -4,13 +4,13 @@ title: Twin Memory
 
 # Twin Memory
 
-DevTwin maintains a twin profile per project. It is stored locally in a SQLite database at `.devtwin/memory.db`. Nothing is sent to any remote server.
+CodeTwin maintains a twin profile per project. It is stored locally in a SQLite database at `.CodeTwin/memory.db`. Nothing is sent to any remote server.
 
 ## What gets stored
 
 ### Decisions
 
-Every time DevTwin makes a significant architectural or implementation choice — or you override one — it records:
+Every time CodeTwin makes a significant architectural or implementation choice — or you override one — it records:
 
 - What was chosen
 - What the alternatives were
@@ -19,7 +19,7 @@ Every time DevTwin makes a significant architectural or implementation choice �
 
 ### Constraints
 
-Active constraints are rules DevTwin must respect in all future tasks:
+Active constraints are rules CodeTwin must respect in all future tasks:
 
 - No specific library (`no lodash`)
 - Package manager preference (`use pnpm, not npm`)
@@ -33,7 +33,7 @@ Add a constraint at any time:
 
 ### Failure patterns
 
-When a task fails or is rolled back, DevTwin records:
+When a task fails or is rolled back, CodeTwin records:
 
 - The operation that failed
 - The file or module involved
@@ -49,17 +49,17 @@ From the TUI, type `/memory` to view the current project's twin profile.
 From the CLI:
 
 ```bash
-devtwin memory show
+CodeTwin memory show
 ```
 
 ## Resetting memory
 
 ```bash
-devtwin memory reset
+CodeTwin memory reset
 ```
 
 This clears all decisions, constraints, and failure patterns for the current project. Irreversible.
 
 ## Storage location
 
-Memory lives in `.devtwin/memory.db` relative to your project root. It is safe to commit to version control — it contains no secrets. Add it to `.gitignore` if you prefer not to share project memory with teammates.
+Memory lives in `.CodeTwin/memory.db` relative to your project root. It is safe to commit to version control — it contains no secrets. Add it to `.gitignore` if you prefer not to share project memory with teammates.
