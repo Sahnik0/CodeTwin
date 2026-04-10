@@ -19,8 +19,7 @@ export default function FinalCTASection() {
       <div
         className="pointer-events-none absolute inset-0"
         style={{
-          background:
-            'radial-gradient(ellipse 60% 50% at 50% 100%, rgba(45,212,191,0.05) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse 60% 50% at 50% 100%, rgba(166,166,237,0.05) 0%, transparent 70%)',
         }}
         aria-hidden="true"
       />
@@ -33,7 +32,7 @@ export default function FinalCTASection() {
           transition={{ duration: 0.65, ease: easeOut }}
         >
           {/* Label */}
-          <p className="text-xs text-[#2dd4bf] uppercase tracking-[0.2em] font-mono mb-6">
+          <p className="text-xs text-[#a6a6ed] uppercase tracking-[0.2em] font-mono mb-6">
             Get Started Free
           </p>
 
@@ -62,7 +61,7 @@ export default function FinalCTASection() {
 
             <Link
               href="/docs/getting-started"
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-[#2dd4bf] text-background text-sm font-semibold hover:bg-[#14b8a6] transition-colors duration-200"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-[#a6a6ed] text-background text-sm font-semibold hover:bg-[#9494e0] transition-colors duration-200"
             >
               Read the Docs →
             </Link>

@@ -26,9 +26,9 @@ export default function NavBar() {
         {/* Wordmark */}
         <Link
           href="/"
-          className="font-mono text-sm font-medium text-text-primary tracking-tight hover:text-[#2dd4bf] transition-colors"
+          className="font-mono text-sm font-medium text-text-primary tracking-tight hover:text-[#a6a6ed] transition-colors"
         >
-          CodeTwin
+          Code<span className="text-[#a6a6ed]">Twin</span>
         </Link>
 
         {/* Desktop nav — center */}
@@ -73,7 +73,7 @@ export default function NavBar() {
           </Link>
           <Link
             href="/docs/getting-started"
-            className="text-xs text-background bg-[#2dd4bf] hover:bg-[#14b8a6] transition-colors px-3 py-1.5 rounded font-medium"
+            className="text-xs text-background bg-[#a6a6ed] hover:bg-[#9494e0] transition-colors px-3 py-1.5 rounded font-medium"
           >
             Sign Up
           </Link>
@@ -133,7 +133,7 @@ export default function NavBar() {
             </Link>
             <Link
               href="/docs/getting-started"
-              className="text-xs text-background bg-[#2dd4bf] hover:bg-[#14b8a6] transition-colors px-3 py-1.5 rounded font-medium"
+              className="text-xs text-background bg-[#a6a6ed] hover:bg-[#9494e0] transition-colors px-3 py-1.5 rounded font-medium"
               onClick={() => setOpen(false)}
             >
               Sign Up

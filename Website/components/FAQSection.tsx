@@ -53,7 +53,7 @@ export default function FAQSection() {
           transition={{ duration: 0.5, ease: easeOut }}
           className="mb-4"
         >
-          <p className="text-xs text-[#2dd4bf] uppercase tracking-[0.2em] font-mono mb-3">
+          <p className="text-xs text-[#a6a6ed] uppercase tracking-[0.2em] font-mono mb-3">
             Support
           </p>
           <h2 className="text-3xl md:text-4xl font-semibold text-text-primary leading-tight">
@@ -73,7 +73,7 @@ export default function FAQSection() {
             href="https://github.com/Sahnik0/CodeTwin/issues"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[#2dd4bf] hover:underline"
+            className="text-[#a6a6ed] hover:underline"
           >
             Open an issue on GitHub
           </a>
@@ -101,7 +101,7 @@ export default function FAQSection() {
                     aria-controls={`faq-panel-${i}`}
                   >
                     <span
-                      className={`text-sm font-medium pr-6 transition-colors duration-200 ${isOpen ? 'text-[#2dd4bf]' : 'text-text-primary group-hover:text-[#2dd4bf]'
+                      className={`text-sm font-medium pr-6 transition-colors duration-200 ${isOpen ? 'text-[#a6a6ed]' : 'text-text-primary group-hover:text-[#a6a6ed]'
                         }`}
                     >
                       {faq.question}
@@ -109,7 +109,7 @@ export default function FAQSection() {
 
                     <span
                       className={`flex-shrink-0 w-6 h-6 rounded-full border flex items-center justify-center transition-all duration-300 ${isOpen
-                        ? 'border-[#2dd4bf] bg-[#2dd4bf14] text-[#2dd4bf]'
+                        ? 'border-[#a6a6ed] bg-[#a6a6ed14] text-[#a6a6ed]'
                         : 'border-border-default text-text-muted group-hover:border-border-hover'
                         }`}
                     >

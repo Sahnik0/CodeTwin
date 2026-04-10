@@ -4,6 +4,7 @@ import { GeistMono } from 'geist/font/mono'
 import NavBar from '@/components/NavBar'
 import Footer from '@/components/Footer'
 import './globals.css'
+import { SmoothScroll } from '@/components/SmoothScroll'
 
 export const metadata: Metadata = {
   title: 'CodeTwin — Terminal AI coding agent',
@@ -34,9 +35,11 @@ export default function RootLayout({
       className={`${GeistSans.variable} ${GeistMono.variable}`}
     >
       <body className="bg-background text-text-primary font-sans antialiased">
-        <NavBar />
-        <main>{children}</main>
-        <Footer />
+        <SmoothScroll>
+          <NavBar />
+          <main>{children}</main>
+          <Footer />
+        </SmoothScroll>
       </body>
     </html>
   )

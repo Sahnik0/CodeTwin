@@ -18,7 +18,7 @@ export default function HeroSection() {
         className="pointer-events-none absolute inset-0"
         style={{
           background: [
-            'radial-gradient(ellipse 70% 45% at 50% 0%, rgba(45,212,191,0.07) 0%, transparent 55%)',
+            'radial-gradient(ellipse 70% 45% at 50% 0%, rgba(166, 166, 237, 0.07) 0%, transparent 55%)',
             'radial-gradient(ellipse 50% 60% at 80% 20%, rgba(124,58,237,0.04) 0%, transparent 60%)',
           ].join(', '),
         }}
@@ -36,7 +36,7 @@ export default function HeroSection() {
           transition={{ duration: 0.5, ease: easeOut }}
         >
           <span className="inline-flex items-center gap-2 text-xs text-text-muted uppercase tracking-[0.18em] font-mono mb-8 border border-border-default rounded-full px-4 py-1.5 bg-surface/60 backdrop-blur-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#2dd4bf] animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#a6a6ed] animate-pulse" />
             Terminal-First AI Coding Agent
           </span>
         </motion.div>
@@ -60,7 +60,7 @@ export default function HeroSection() {
             transition={{ delay: 0.22, duration: 0.6, ease: easeOut }}
           >
             <span className="text-text-primary">Your Machine. </span>
-            <span className="text-[#2dd4bf]">
+            <span className="text-[#a6a6ed]">
               Your Rules.
             </span>
           </motion.span>
@@ -88,7 +88,7 @@ export default function HeroSection() {
         >
           <Link
             href="/docs/getting-started"
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg border border-[#2dd4bf] text-[#2dd4bf] text-sm font-medium hover:bg-[#2dd4bf14] transition-all duration-200 shadow-[0_0_20px_rgba(45,212,191,0.08)]"
+            className="flex items-center justify-center gap-2 px-8 h-12 rounded-lg border border-[#a6a6ed] text-[#a6a6ed] text-sm font-medium hover:bg-[#a6a6ed14] transition-all duration-200 shadow-[0_0_20px_rgba(166,166,237,0.08)]"
           >
             Get Started →
           </Link>
@@ -123,7 +123,7 @@ export default function HeroSection() {
             className="relative rounded-xl border border-border-default bg-surface-elevated overflow-hidden shadow-2xl aspect-[16/9]"
             style={{
               boxShadow:
-                '0 0 0 1px rgba(255,255,255,0.04) inset, 0 32px 80px rgba(0,0,0,0.5), 0 0 60px rgba(45,212,191,0.04)',
+                '0 0 0 1px rgba(255,255,255,0.04) inset, 0 32px 80px rgba(0,0,0,0.5), 0 0 60px rgba(166, 166, 237, 0.04)',
             }}
           >
             {/* Placeholder inner content */}

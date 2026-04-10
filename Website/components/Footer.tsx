@@ -16,7 +16,7 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <span className="font-mono text-sm font-semibold text-text-primary block mb-2">
-              CodeTwin
+              Code<span className="text-[#a6a6ed]">Twin</span>
             </span>
             <p className="text-xs text-text-muted leading-relaxed max-w-[200px]">
               A terminal-first AI coding agent. Built for developers who want control.

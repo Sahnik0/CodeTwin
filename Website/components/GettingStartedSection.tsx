@@ -29,15 +29,29 @@ const steps = [
   },
 ]
 
-const contributors = [
-  { initials: 'SA', name: 'Sahnik0', role: 'Project Lead', color: '#2dd4bf', href: 'https://github.com/Sahnik0' },
-  { initials: 'AB', name: 'Contributor', role: 'Core Developer', color: '#7c3aed', href: 'https://github.com/Sahnik0/CodeTwin' },
-  { initials: 'CD', name: 'Contributor', role: 'Open Source', color: '#f59e0b', href: 'https://github.com/Sahnik0/CodeTwin' },
-]
+import { useState, useEffect } from 'react'
+
+interface GitHubContributor {
+  id: number
+  login: string
+  avatar_url: string
+  html_url: string
+  contributions: number
+}
 
 const easeOut = [0.16, 1, 0.3, 1] as const
 
 export default function GettingStartedSection() {
+  const [contributors, setContributors] = useState<GitHubContributor[]>([])
+
+  useEffect(() => {
+    fetch('https://api.github.com/repos/Sahnik0/CodeTwin/contributors?per_page=5')
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) setContributors(data)
+      })
+      .catch((err) => console.error('Failed to fetch contributors:', err))
+  }, [])
   return (
     <section className="py-28 px-6 border-t border-border-default">
       <div className="max-w-6xl mx-auto">
@@ -49,7 +63,7 @@ export default function GettingStartedSection() {
           transition={{ duration: 0.5, ease: easeOut }}
           className="mb-16"
         >
-          <p className="text-xs text-[#2dd4bf] uppercase tracking-[0.2em] font-mono mb-3">
+          <p className="text-xs text-[#a6a6ed] uppercase tracking-[0.2em] font-mono mb-3">
             Quick Start
           </p>
           <h2 className="text-3xl md:text-4xl font-semibold text-text-primary leading-tight mb-4">
@@ -60,7 +74,7 @@ export default function GettingStartedSection() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-stretch">
           {/* Left — steps */}
           <div className="flex flex-col gap-8">
             {steps.map((step, i) => (
@@ -74,11 +88,11 @@ export default function GettingStartedSection() {
               >
                 {/* Step indicator */}
                 <div className="flex flex-col items-center gap-2 flex-shrink-0">
-                  <div className="w-8 h-8 rounded-full border border-[#2dd4bf44] bg-[#2dd4bf0a] flex items-center justify-center text-[#2dd4bf]">
+                  <div className="w-8 h-8 rounded-full border border-[#a6a6ed44] bg-[#a6a6ed0a] flex items-center justify-center text-[#a6a6ed]">
                     {step.icon}
                   </div>
                   {i < steps.length - 1 && (
-                    <div className="flex-1 w-px bg-gradient-to-b from-[#2dd4bf22] to-transparent min-h-[40px]" />
+                    <div className="flex-1 w-px bg-gradient-to-b from-[#a6a6ed22] to-transparent min-h-[40px]" />
                   )}
                 </div>
 
@@ -105,10 +119,10 @@ export default function GettingStartedSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2, ease: easeOut }}
-            className="flex flex-col gap-8"
+            className="flex flex-col gap-8 h-full"
           >
             {/* Quick-copy install */}
-            <div className="p-6 rounded-xl border border-border-default bg-surface-elevated">
+            <div className="p-6 rounded-xl border border-border-default bg-surface-elevated flex-1 flex flex-col justify-center">
               <p className="text-xs text-text-muted font-mono uppercase tracking-widest mb-4">
                 Quick Install
               </p>
@@ -125,7 +139,7 @@ export default function GettingStartedSection() {
                   'Local twin memory per project',
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-2.5 text-xs text-text-secondary">
-                    <Check size={12} className="text-[#2dd4bf] flex-shrink-0" />
+                    <Check size={12} className="text-[#a6a6ed] flex-shrink-0" />
                     {item}
                   </li>
                 ))}
@@ -138,38 +152,38 @@ export default function GettingStartedSection() {
                 Open Source Contributors
               </p>
               <div className="flex flex-col gap-3">
-                {contributors.map((person, i) => (
+                {contributors.map((person) => (
                   <a
-                    key={i}
-                    href={person.href}
+                    key={person.id}
+                    href={person.html_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 group"
                   >
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 transition-transform group-hover:scale-105"
-                      style={{
-                        backgroundColor: person.color + '22',
-                        border: `1.5px solid ${person.color}44`,
-                        color: person.color,
-                      }}
-                    >
-                      {person.initials}
+                    <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 border border-border-default group-hover:border-[#a6a6ed] transition-colors">
+                      <img 
+                        src={person.avatar_url} 
+                        alt={`${person.login}'s avatar`}
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                      />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-text-primary group-hover:text-[#2dd4bf] transition-colors">
-                        {person.name}
+                      <p className="text-sm font-medium text-text-primary group-hover:text-[#a6a6ed] transition-colors">
+                        {person.login}
                       </p>
-                      <p className="text-xs text-text-muted">{person.role}</p>
+                      <p className="text-xs text-text-muted">{person.contributions} contributions</p>
                     </div>
                   </a>
                 ))}
+                {contributors.length === 0 && (
+                  <div className="text-xs text-text-muted animate-pulse">Loading contributors...</div>
+                )}
               </div>
               <a
                 href="https://github.com/Sahnik0/CodeTwin/graphs/contributors"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-block mt-4 text-xs text-[#2dd4bf] hover:underline font-mono"
+                className="inline-block mt-4 text-xs text-[#a6a6ed] hover:underline font-mono"
               >
                 View all contributors →
               </a>
