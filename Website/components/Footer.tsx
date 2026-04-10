@@ -38,12 +38,6 @@ const socialLinks: SocialLink[] = [
   },
 ]
 
-const productLinks = [
-  { label: 'Changelog', href: '/changelog' },
-  { label: 'CLI Reference', href: '/docs/cli-reference' },
-  { label: 'Provider Setup', href: '/docs/providers' },
-]
-
 function SocialLinkIcon({ icon }: { icon: SocialIcon }) {
   if (icon === 'github') {
     return <GitHubIcon size={21} />
