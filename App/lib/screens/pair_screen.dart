@@ -1,6 +1,6 @@
-/// Pairing screen — enter server URL + pairing code from the CLI.
+/// Pairing screen — enter pairing code from the CLI.
 ///
-/// The CLI runs `codetwin login <serverUrl>` which displays a short
+/// The CLI runs `codetwin login` which displays a short
 /// alphanumeric code such as `54NRW7GZ7YUX`. The user enters this code
 /// here to complete the handshake via POST /pair/mobile/complete.
 ///
@@ -31,9 +31,6 @@ class _PairScreenState extends ConsumerState<PairScreen> {
   String? _errorMessage;
 
   final _codeController = TextEditingController();
-  final _urlController = TextEditingController(
-    text: 'https://codetwin-1quv.onrender.com',
-  );
   final _formKey = GlobalKey<FormState>();
 
   static const _primaryColor = Color(0xFF20B2AA);
@@ -41,11 +38,10 @@ class _PairScreenState extends ConsumerState<PairScreen> {
   @override
   void dispose() {
     _codeController.dispose();
-    _urlController.dispose();
     super.dispose();
   }
 
-  Future<void> _completePairing(String apiBaseUrl, String code) async {
+  Future<void> _completePairing(String code) async {
     setState(() {
       _isConnecting = true;
       _errorMessage = null;
@@ -54,7 +50,7 @@ class _PairScreenState extends ConsumerState<PairScreen> {
     try {
       final mobileDeviceId = const Uuid().v4();
       final result = await PairingService().completePairing(
-        apiBaseUrl: apiBaseUrl,
+        apiBaseUrl: kCodeTwinApiBaseUrl,
         code: code,
         mobileDeviceId: mobileDeviceId,
         mobileDeviceName: 'CodeTwin Mobile',
@@ -100,35 +96,59 @@ class _PairScreenState extends ConsumerState<PairScreen> {
     }
   }
 
+  bool _isLockedServer(String candidate) {
+    final locked = normalizeApiBaseUrl(kCodeTwinApiBaseUrl);
+    final parsed = normalizeApiBaseUrl(candidate);
+    return parsed.isNotEmpty && parsed == locked;
+  }
+
   void _onQrDetect(BarcodeCapture capture) {
+    if (_isConnecting) return;
+
     for (final barcode in capture.barcodes) {
       final raw = barcode.rawValue;
       if (raw == null) continue;
+      final text = raw.trim();
+      if (text.isEmpty) continue;
+
+      String? code;
+      String? apiBaseUrl;
+
       try {
-        final json = jsonDecode(raw) as Map<String, dynamic>;
+        final json = jsonDecode(text) as Map<String, dynamic>;
 
         // New QR format: {apiBaseUrl, code}
-        final apiBaseUrl = json['apiBaseUrl'] as String?;
-        final code = json['code'] as String?;
-        if (apiBaseUrl != null && code != null) {
-          _completePairing(apiBaseUrl, code);
-          return;
-        }
+        apiBaseUrl = json['apiBaseUrl'] as String?;
+        code = json['code'] as String? ?? json['pairCode'] as String?;
 
         // Legacy fallback: {signalingUrl, code} — map signalingUrl → apiBaseUrl
         final legacy = json['signalingUrl'] as String?;
         final legacyCode = json['code'] as String? ?? json['pairCode'] as String?;
-        if (legacy != null && legacyCode != null) {
+        if (apiBaseUrl == null && legacy != null && legacyCode != null) {
           // Convert wss:// → https:// for apiBaseUrl
-          final httpBase = legacy
+          apiBaseUrl = legacy
               .replaceFirst('wss://', 'https://')
               .replaceFirst('/ws', '');
-          _completePairing(httpBase, legacyCode);
-          return;
+          code = legacyCode;
         }
       } catch (_) {
-        // Not a valid CodeTwin QR — ignore
+        // Plain text fallback: allow direct pairing code in QR payload.
+        code = text;
       }
+
+      if (code == null || code.trim().isEmpty) {
+        continue;
+      }
+
+      if (apiBaseUrl != null && !_isLockedServer(apiBaseUrl)) {
+        setState(() {
+          _errorMessage = 'This QR points to a different server and cannot be used in this app build.';
+        });
+        return;
+      }
+
+      _completePairing(code.trim().toUpperCase());
+      return;
     }
   }
 
@@ -179,7 +199,7 @@ class _PairScreenState extends ConsumerState<PairScreen> {
                 const SizedBox(height: 8),
                 Text(
                   _manualMode
-                      ? 'Run `codetwin login <server-url>` in your terminal,\nthen enter the code below.'
+                      ? 'Run `codetwin login` in your terminal,\nthen enter the code below.'
                       : 'Scan the QR code shown by the CLI\nor switch to manual code entry.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
@@ -344,24 +364,32 @@ class _PairScreenState extends ConsumerState<PairScreen> {
         key: _formKey,
         child: Column(
           children: [
-            // Server URL field
-            _buildField(
-              controller: _urlController,
-              label: 'SERVER URL',
-              hint: 'https://codetwin-1quv.onrender.com',
-              icon: Icons.cloud_outlined,
-              keyboardType: TextInputType.url,
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Server URL required';
-                final uri = Uri.tryParse(v.trim());
-                if (uri == null || !uri.hasScheme) return 'Enter a valid URL';
-                if (!uri.scheme.startsWith('http')) {
-                  return 'Use http:// or https://';
-                }
-                return null;
-              },
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: _primaryColor.withOpacity(0.06),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _primaryColor.withOpacity(0.25)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.lock_outline, color: _primaryColor.withOpacity(0.9), size: 18),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Server locked: ${normalizeApiBaseUrl(kCodeTwinApiBaseUrl)}',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 12,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 18),
 
             // Pair code field
             _buildField(
@@ -395,10 +423,7 @@ class _PairScreenState extends ConsumerState<PairScreen> {
               child: FilledButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
-                    _completePairing(
-                      _urlController.text.trim(),
-                      _codeController.text.trim().toUpperCase(),
-                    );
+                    _completePairing(_codeController.text.trim().toUpperCase());
                   }
                 },
                 style: FilledButton.styleFrom(

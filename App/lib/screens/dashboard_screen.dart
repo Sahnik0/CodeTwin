@@ -1,5 +1,8 @@
-/// Dashboard — active session view with task input, preflight/decision cards, log preview.
-/// CLI-themed redesign — matches the solid navigation bar style.
+// Dashboard active session view with task input, cards, and log preview.
+// CLI-themed redesign matching the navigation bar style.
+
+import 'dart:ui';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,7 +15,6 @@ import '../widgets/preflight_card.dart';
 import '../widgets/task_input.dart';
 import '../widgets/chat_message_list.dart';
 import '../utils/formatters.dart';
-import '../widgets/restart_widget.dart';
 import '../widgets/daemon_status_bar.dart';
 import '../widgets/session_status_badge.dart';
 import '../theme/cli_theme.dart';
@@ -51,10 +53,14 @@ class _FadeSlideState extends State<_FadeSlide>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 400));
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
     _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
-    _slide = Tween(begin: const Offset(0, 0.06), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    _slide = Tween(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
     Future.delayed(widget.delay, () {
       if (mounted) _ctrl.forward();
     });
@@ -68,9 +74,9 @@ class _FadeSlideState extends State<_FadeSlide>
 
   @override
   Widget build(BuildContext context) => FadeTransition(
-        opacity: _fade,
-        child: SlideTransition(position: _slide, child: widget.child),
-      );
+    opacity: _fade,
+    child: SlideTransition(position: _slide, child: widget.child),
+  );
 }
 
 // ── Main screen ───────────────────────────────────────────────────────────────
@@ -85,187 +91,227 @@ class DashboardScreen extends ConsumerWidget {
     final chatLogs = session.logs.where(_isChatInteraction).toList();
     final timelineLogs = session.logs.where(_isTimelineEvent).toList();
     final shouldShowTimelineLink =
-      session.status == SessionStatus.idle &&
-      timelineLogs.isNotEmpty &&
-      session.preflightQueue.isEmpty &&
-      session.decisionQueue.isEmpty;
+        session.status == SessionStatus.idle &&
+        timelineLogs.isNotEmpty &&
+        session.preflightQueue.isEmpty &&
+        session.decisionQueue.isEmpty;
+    final showStarterHint =
+        session.status == SessionStatus.idle &&
+        session.currentTask == null &&
+        chatLogs.isEmpty &&
+        session.preflightQueue.isEmpty &&
+        session.decisionQueue.isEmpty &&
+        session.lastComplete == null &&
+        session.lastFailed == null;
+    final hasTopCards =
+        session.preflightQueue.isNotEmpty ||
+        (session.lastComplete != null &&
+            session.status == SessionStatus.idle) ||
+        (session.lastFailed != null && session.status == SessionStatus.failed);
 
     return CliTheme(
       level: session.dependenceLevel,
       child: Builder(
         builder: (context) {
           final cli = CliTheme.of(context);
+          final topInset = MediaQuery.paddingOf(context).top + 48;
+          final bottomInset = MediaQuery.paddingOf(context).bottom;
+
           return Container(
             color: cli.bg,
             child: Stack(
               children: [
-                Column(
-                  children: [
-                    // ── Scrollable Area ──────────────────────────────────────
-                    Expanded(
-                      child: SafeArea(
-                        bottom: false,
-                        child: CustomScrollView(
-                          slivers: [
-                            SliverPadding(
-                              padding: const EdgeInsets.only(
-                                  top: 48), // Space for floating status bar
-                              sliver: SliverToBoxAdapter(
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: [
-                                    // ── Preflight queue ──────────────────────────────
-                                    if (session.preflightQueue.isNotEmpty)
-                                      _FadeSlide(
-                                        delay: const Duration(milliseconds: 60),
-                                        child: _CliSection(
-                                          label: 'PREFLIGHT',
-                                          borderColor: cli.amber,
-                                          child: PreflightCard(
-                                            item: session.preflightQueue.first,
-                                            onApprove: (id) {
-                                              actions.approve(id);
-                                              ref
-                                                  .read(sessionProvider.notifier)
-                                                  .resolvePreflight(id);
-                                            },
-                                            onReject: (id) {
-                                              actions.reject(id);
-                                              ref
-                                                  .read(sessionProvider.notifier)
-                                                  .resolvePreflight(id);
-                                            },
-                                            onModify: (id, text) {
-                                              actions.answer(id, text);
-                                              ref
-                                                  .read(sessionProvider.notifier)
-                                                  .resolvePreflight(id);
-                                            },
-                                          ),
+                // ── Scrollable Area ──────────────────────────────────────
+                Positioned.fill(
+                  child: ShaderMask(
+                    shaderCallback: (Rect bounds) {
+                      return const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black,
+                          Colors.black,
+                          Colors.transparent,
+                        ],
+                        stops: [0.0, 0.12, 0.78, 1.0],
+                      ).createShader(bounds);
+                    },
+                    blendMode: BlendMode.dstIn,
+                    child: CustomScrollView(
+                      controller: ScrollController(),
+                      slivers: [
+                        if (hasTopCards)
+                          SliverPadding(
+                            padding: EdgeInsets.only(top: topInset),
+                            sliver: SliverToBoxAdapter(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  if (session.preflightQueue.isNotEmpty)
+                                    _FadeSlide(
+                                      delay: const Duration(milliseconds: 60),
+                                      child: _CliSection(
+                                        label: 'PREFLIGHT',
+                                        borderColor: cli.amber,
+                                        child: PreflightCard(
+                                          item: session.preflightQueue.first,
+                                          onApprove: (id) {
+                                            actions.approve(id);
+                                            ref
+                                                .read(sessionProvider.notifier)
+                                                .resolvePreflight(id);
+                                          },
+                                          onReject: (id) {
+                                            actions.reject(id);
+                                            ref
+                                                .read(sessionProvider.notifier)
+                                                .resolvePreflight(id);
+                                          },
+                                          onModify: (id, text) {
+                                            actions.answer(id, text);
+                                            ref
+                                                .read(sessionProvider.notifier)
+                                                .resolvePreflight(id);
+                                          },
                                         ),
                                       ),
-
-                                    // ── Last completed ───────────────────────────────
-                                    if (session.lastComplete != null &&
-                                        session.status == SessionStatus.idle)
-                                      _FadeSlide(
-                                        delay: const Duration(milliseconds: 80),
-                                        child: _TerminalResultCard(
-                                          isSuccess: true,
-                                          title: 'TASK COMPLETED',
-                                          body: session.lastComplete!.summary,
-                                          meta:
-                                              '${session.lastComplete!.filesChanged.length} files changed'
-                                              '  ·  ${formatDurationMs(session.lastComplete!.durationMs)}',
-                                        ),
+                                    ),
+                                  if (session.lastComplete != null &&
+                                      session.status == SessionStatus.idle)
+                                    _FadeSlide(
+                                      delay: const Duration(milliseconds: 80),
+                                      child: _TerminalResultCard(
+                                        isSuccess: true,
+                                        title: 'TASK COMPLETED',
+                                        body: session.lastComplete!.summary,
+                                        meta:
+                                            '${session.lastComplete!.filesChanged.length} files changed'
+                                            '  ·  ${formatDurationMs(session.lastComplete!.durationMs)}',
                                       ),
-
-                                    // ── Last failed ──────────────────────────────────
-                                    if (session.lastFailed != null &&
-                                        session.status == SessionStatus.failed)
-                                      _FadeSlide(
-                                        delay: const Duration(milliseconds: 80),
-                                        child: _TerminalResultCard(
-                                          isSuccess: false,
-                                          title: 'TASK FAILED',
-                                          body: session.lastFailed!.error,
-                                        ),
+                                    ),
+                                  if (session.lastFailed != null &&
+                                      session.status == SessionStatus.failed)
+                                    _FadeSlide(
+                                      delay: const Duration(milliseconds: 80),
+                                      child: _TerminalResultCard(
+                                        isSuccess: false,
+                                        title: 'TASK FAILED',
+                                        body: session.lastFailed!.error,
                                       ),
-
-                                  ],
-                                ),
+                                    ),
+                                ],
                               ),
                             ),
-
-                            // ── Chat log fills remaining space ───────────────────
-                            if ((chatLogs.isNotEmpty ||
-                                    session.decisionQueue.isNotEmpty) &&
-                                session.preflightQueue.isEmpty)
-                              SliverFillRemaining(
-                                hasScrollBody: true,
-                                child: ChatMessageList(
-                                  logs: chatLogs,
-                                  pendingDecision: session.decisionQueue.isEmpty
-                                      ? null
-                                      : session.decisionQueue.first,
-                                  showTimelineLink: shouldShowTimelineLink,
-                                  onViewTimeline: shouldShowTimelineLink
-                                      ? () => context.go('/logs')
-                                      : null,
-                                  onDecisionAnswer: (id, answer) {
-                                    actions.answer(id, answer);
-                                    ref
-                                        .read(sessionProvider.notifier)
-                                        .resolveDecision(id);
-                                  },
-                                  onDecisionReject: (id) {
-                                    actions.reject(id);
-                                    ref
-                                        .read(sessionProvider.notifier)
-                                        .resolveDecision(id);
-                                  },
-                                ),
-                              ),
-
-                            // Bottom padding so chat doesn't touch the start of the bar
-                            const SliverPadding(
-                              padding: EdgeInsets.only(bottom: 24),
+                          ),
+                        if ((chatLogs.isNotEmpty ||
+                                session.decisionQueue.isNotEmpty) &&
+                            session.preflightQueue.isEmpty)
+                          SliverFillRemaining(
+                            hasScrollBody: true,
+                            child: ChatMessageList(
+                              logs: chatLogs,
+                              topPadding: hasTopCards ? 8.0 : topInset,
+                              bottomPadding: 140 + bottomInset,
+                              pendingDecision: session.decisionQueue.isEmpty
+                                  ? null
+                                  : session.decisionQueue.first,
+                              showTimelineLink: shouldShowTimelineLink,
+                              onViewTimeline: shouldShowTimelineLink
+                                  ? () => context.go('/logs')
+                                  : null,
+                              onDecisionAnswer: (id, answer) {
+                                actions.answer(id, answer);
+                                ref
+                                    .read(sessionProvider.notifier)
+                                    .resolveDecision(id);
+                              },
+                              onDecisionReject: (id) {
+                                actions.reject(id);
+                                ref
+                                    .read(sessionProvider.notifier)
+                                    .resolveDecision(id);
+                              },
                             ),
-                          ],
+                          ),
+                        const SliverPadding(
+                          padding: EdgeInsets.only(bottom: 120),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 280),
+                      curve: Curves.easeOutCubic,
+                      opacity: showStarterHint ? 1 : 0,
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          24,
+                          topInset + 20,
+                          24,
+                          160 + bottomInset,
+                        ),
+                        child: Center(
+                          child: _NewChatStarterHint(
+                            isVisible: showStarterHint,
+                          ),
                         ),
                       ),
                     ),
-
-                    // ── Solid bottom input area ──────────────────────────────────
-                    // Matches the style of the bottom navigation bar
-                    _BottomBar(session: session, actions: actions, ref: ref),
-                  ],
+                  ),
                 ),
-
-                // ── Floating Status Hub ──────────────────────────────────────
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: _BottomBar(
+                    session: session,
+                    actions: actions,
+                    ref: ref,
+                  ),
+                ),
                 Positioned(
                   top: 0,
                   left: 0,
                   right: 0,
-                  child: SafeArea(
-                    bottom: false,
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 4, left: 16, right: 16),
-                      child: SizedBox(
-                        height: 32,
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: _FloatingStatusBar(session: session),
+                  child: Container(
+                    padding: EdgeInsets.only(
+                      top: MediaQuery.paddingOf(context).top + 4,
+                      left: 10,
+                      right: 10,
+                    ),
+                    color: Colors.transparent,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          height: 32,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: _FloatingStatusBar(session: session),
+                                ),
                               ),
-                            ),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Transform.scale(
-                                  scale: 0.75,
-                                  child: IconButton(
-                                    padding: EdgeInsets.zero,
-                                    onPressed: () {
-                                      RestartWidget.restartApp(context);
-                                    },
-                                    icon: Icon(Icons.refresh, color: cli.textDim),
-                                    tooltip: 'Restart App',
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Transform.scale(
+                                    scale: 0.75,
+                                    child: const DaemonStatusBar(),
                                   ),
-                                ),
-                                Transform.scale(
-                                  scale: 0.75,
-                                  child: const DaemonStatusBar(),
-                                ),
-                              ],
-                            ),
-                          ],
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 10),
+                      ],
                     ),
                   ),
                 ),
@@ -274,6 +320,89 @@ class DashboardScreen extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+}
+
+class _NewChatStarterHint extends StatefulWidget {
+  final bool isVisible;
+
+  const _NewChatStarterHint({required this.isVisible});
+
+  @override
+  State<_NewChatStarterHint> createState() => _NewChatStarterHintState();
+}
+
+class _NewChatStarterHintState extends State<_NewChatStarterHint> {
+  static const List<String> _lines = [
+    'Drop the prompt, let CodeTwin cook.',
+    'Say less, ship more, send the task.',
+    'One message and we lock in on your code mission.',
+    'Build mode: on. Type it and watch it move.',
+    'Your repo, your vibe, your next win starts here.',
+  ];
+
+  final Random _random = Random();
+  late String _line;
+
+  @override
+  void initState() {
+    super.initState();
+    _line = _pickLine();
+  }
+
+  @override
+  void didUpdateWidget(covariant _NewChatStarterHint oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.isVisible && widget.isVisible) {
+      setState(() {
+        _line = _pickLine(previous: _line);
+      });
+    }
+  }
+
+  String _pickLine({String? previous}) {
+    if (_lines.length <= 1) return _lines.first;
+    var next = _lines[_random.nextInt(_lines.length)];
+    while (next == previous) {
+      next = _lines[_random.nextInt(_lines.length)];
+    }
+    return next;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cli = CliTheme.of(context);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.chat_bubble_outline,
+          size: 28,
+          color: cli.accent.withValues(alpha: 0.72),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          'Hey, what\'s up',
+          style: cli.mono.copyWith(
+            color: Colors.white.withValues(alpha: 0.9),
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.3,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _line,
+          style: cli.mono.copyWith(
+            color: Colors.white.withValues(alpha: 0.44),
+            fontSize: 12,
+            height: 1.45,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }
@@ -288,7 +417,10 @@ class _FloatingStatusBar extends ConsumerWidget {
     return Row(
       children: [
         // Status Badge
-        SessionStatusBadge(status: session.status, currentTask: session.currentTask),
+        SessionStatusBadge(
+          status: session.status,
+          currentTask: session.currentTask,
+        ),
         const Spacer(),
       ],
     );
@@ -301,8 +433,11 @@ class _CliSection extends StatelessWidget {
   final Widget child;
   final Color? borderColor;
 
-  const _CliSection(
-      {required this.label, required this.child, this.borderColor});
+  const _CliSection({
+    required this.label,
+    required this.child,
+    this.borderColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -318,19 +453,24 @@ class _CliSection extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: (borderColor ?? cli.accentDim).withValues(alpha: 0.12),
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(4)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(4),
+                ),
                 border: Border(
-                    bottom: BorderSide(
-                        color: borderColor ?? cli.border, width: 1)),
+                  bottom: BorderSide(
+                    color: borderColor ?? cli.border,
+                    width: 1,
+                  ),
+                ),
               ),
               child: Text(
                 '▸ $label',
                 style: cli.mono.copyWith(
-                    color: borderColor ?? cli.accent,
-                    fontSize: 10,
-                    letterSpacing: 1.5,
-                    fontWeight: FontWeight.bold),
+                  color: borderColor ?? cli.accent,
+                  fontSize: 10,
+                  letterSpacing: 1.5,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             child,
@@ -373,22 +513,29 @@ class _TerminalResultCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Text('$icon ',
-                    style: cli.mono.copyWith(color: accent, fontSize: 14)),
+                Text(
+                  '$icon ',
+                  style: cli.mono.copyWith(color: accent, fontSize: 14),
+                ),
                 Text(
                   title,
                   style: cli.mono.copyWith(
-                      color: accent,
-                      fontSize: 11,
-                      letterSpacing: 1.5,
-                      fontWeight: FontWeight.bold),
+                    color: accent,
+                    fontSize: 11,
+                    letterSpacing: 1.5,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             Text(
               body,
-              style: cli.mono.copyWith(color: cli.text, fontSize: 13, height: 1.5),
+              style: cli.mono.copyWith(
+                color: cli.text,
+                fontSize: 13,
+                height: 1.5,
+              ),
             ),
             if (meta != null) ...[
               const SizedBox(height: 6),
@@ -410,36 +557,109 @@ class _BottomBar extends StatelessWidget {
   final dynamic actions;
   final WidgetRef ref;
 
-  const _BottomBar(
-      {required this.session, required this.actions, required this.ref});
+  const _BottomBar({
+    required this.session,
+    required this.actions,
+    required this.ref,
+  });
 
   @override
   Widget build(BuildContext context) {
     final cli = CliTheme.of(context);
     // Show input when idle (no active task) OR after a failure (allow retry).
     // When queues have items, those cards take over the bottom area.
-    final canInput = (session.status == SessionStatus.idle ||
+    final canInput =
+        (session.status == SessionStatus.idle ||
             session.status == SessionStatus.failed) &&
         session.preflightQueue.isEmpty &&
         session.decisionQueue.isEmpty;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: cli.bg, // Solid background
-        border: Border(top: BorderSide(color: cli.border, width: 1)),
-      ),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (canInput) ...[
-            TaskInput(
-              enabled: true,
-              onSubmit: (task) => actions.submitTask(task),
+    // Only show "New Chat" after at least one interaction exists.
+    final hasStartedChat =
+        session.logs.isNotEmpty ||
+        session.runStartLogIndex != null ||
+        (session.runPrompt?.trim().isNotEmpty ?? false) ||
+        (session.currentTask?.trim().isNotEmpty ?? false) ||
+        session.lastComplete != null ||
+        session.lastFailed != null;
+
+    return ShaderMask(
+      shaderCallback: (Rect bounds) {
+        return const LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: [Colors.black, Colors.black, Colors.transparent],
+          stops: [0.0, 0.86, 1.0],
+        ).createShader(bounds);
+      },
+      blendMode: BlendMode.dstIn,
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 48, sigmaY: 48),
+          child: Container(
+            color: Colors.transparent,
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (canInput) ...[
+                  if (hasStartedChat) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(right: 16),
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            final archived = ref
+                                .read(sessionProvider.notifier)
+                                .startNewChat();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                behavior: SnackBarBehavior.floating,
+                                duration: const Duration(seconds: 2),
+                                content: Text(
+                                  archived
+                                      ? 'Previous chat saved to History. Started a new chat.'
+                                      : 'Started a new chat.',
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.add_comment_outlined,
+                            size: 16,
+                          ),
+                          label: const Text('New Chat'),
+                          style: OutlinedButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            foregroundColor: cli.accent,
+                            backgroundColor: cli.surface.withValues(
+                              alpha: 0.78,
+                            ),
+                            side: BorderSide(
+                              color: cli.accent.withValues(alpha: 0.55),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  TaskInput(
+                    enabled: true,
+                    onSubmit: (task) => actions.submitTask(task),
+                  ),
+                ],
+              ],
             ),
-          ],
-        ],
+          ),
+        ),
       ),
     );
   }

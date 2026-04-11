@@ -7,6 +7,7 @@ import {
   readRemoteBridgeState,
   writeRemoteBridgeState,
 } from "../remote-bridge"
+import QRCode from "qrcode"
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -116,6 +117,30 @@ export const RemoteLoginCommand = cmd({
     UI.empty()
     UI.println(UI.Style.TEXT_HIGHLIGHT_BOLD + "Enter this 12-character code in the mobile app:" + UI.Style.TEXT_NORMAL)
     UI.println(UI.Style.TEXT_SUCCESS_BOLD + code + UI.Style.TEXT_NORMAL)
+
+    const qrPayload = JSON.stringify({
+      type: "codetwin-pairing",
+      v: 1,
+      apiBaseUrl: serverApi,
+      code,
+    })
+
+    try {
+      const terminalQr = await QRCode.toString(qrPayload, {
+        type: "terminal",
+        small: true,
+        errorCorrectionLevel: "M",
+        margin: 1,
+      })
+
+      UI.empty()
+      UI.println(UI.Style.TEXT_INFO_BOLD + "Scan this QR in the mobile app:" + UI.Style.TEXT_NORMAL)
+      UI.println(terminalQr)
+      UI.println(UI.Style.TEXT_DIM + "(Manual fallback: enter the code shown above)" + UI.Style.TEXT_NORMAL)
+    } catch {
+      UI.println(UI.Style.TEXT_DIM + "Could not render QR in this terminal. Use the code above instead." + UI.Style.TEXT_NORMAL)
+    }
+
     UI.println(
       UI.Style.TEXT_DIM +
         `Code expires at ${new Date(expiresAt).toISOString()} (UTC). Waiting for mobile confirmation...` +

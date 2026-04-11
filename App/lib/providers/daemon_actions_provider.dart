@@ -1,6 +1,5 @@
-/// Provider that exposes high-level actions for talking to the daemon.
-///
-/// All outbound messages go through [DaemonActions].
+// Provider that exposes high-level actions for talking to the daemon.
+// All outbound messages go through DaemonActions.
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -60,31 +59,44 @@ class DaemonActions {
     debugPrint('[DaemonActions] activeJobId=${socketService.activeJobId}');
     // ────────────────────────────────────────────────────────────────────────
 
-      final level = session.dependenceLevel.clamp(1, 5).toInt();
-      final profile = executionProfileForLevel(level);
+    final level = session.dependenceLevel.clamp(1, 5).toInt();
+    final profile = executionProfileForLevel(level);
 
-    ref.read(sessionProvider.notifier).appendLog(LogEntry(
-          id: 'user_input_${DateTime.now().millisecondsSinceEpoch}',
-          timestamp: DateTime.now().toIso8601String(),
-          level: AgentLogLevel.info,
-          message: '> Task: $task',
-          source: LogSource.local,
-        ));
+    ref.read(sessionProvider.notifier).beginTaskRun(task);
+
+    ref
+        .read(sessionProvider.notifier)
+        .appendLog(
+          LogEntry(
+            id: 'user_input_${DateTime.now().millisecondsSinceEpoch}',
+            timestamp: DateTime.now().toIso8601String(),
+            level: AgentLogLevel.info,
+            message: '> Task: $task',
+            source: LogSource.local,
+          ),
+        );
 
     if (!isDaemonConnected) {
       debugPrint('[DaemonActions] BLOCKED — daemon offline');
-      ref.read(sessionProvider.notifier).appendLog(LogEntry(
-            id: 'err_${DateTime.now().millisecondsSinceEpoch}',
-            timestamp: DateTime.now().toIso8601String(),
-            level: AgentLogLevel.error,
-            message: 'Failed to send task: Agent disconnected. Please connect the CLI daemon first.',
-            source: LogSource.local,
-          ));
+      ref
+          .read(sessionProvider.notifier)
+          .appendLog(
+            LogEntry(
+              id: 'err_${DateTime.now().millisecondsSinceEpoch}',
+              timestamp: DateTime.now().toIso8601String(),
+              level: AgentLogLevel.error,
+              message:
+                  'Failed to send task: Agent disconnected. Please connect the CLI daemon first.',
+              source: LogSource.local,
+            ),
+          );
       return;
     }
 
     if (level <= 2 && _writeIntentPattern.hasMatch(task)) {
-      ref.read(sessionProvider.notifier).appendLog(
+      ref
+          .read(sessionProvider.notifier)
+          .appendLog(
             LogEntry(
               id: 'warn_level_${DateTime.now().millisecondsSinceEpoch}',
               timestamp: DateTime.now().toIso8601String(),
@@ -117,11 +129,11 @@ class DaemonActions {
       'streamFormat': profile.streamFormat,
       'thinking': profile.thinking,
     });
-    
+
     // Immediately display 'running' rather than waiting for stdout, improving perceived latency.
     ref.read(sessionProvider.notifier).setStatus(SessionStatus.running);
     ref.read(sessionProvider.notifier).setCurrentTask('Initializing agent...');
-    
+
     debugPrint('[DaemonActions] cliExecute sent ✓');
   }
 
@@ -135,20 +147,17 @@ class DaemonActions {
     }
   }
 
-  void approve(String awaitingResponseId) => _send(
-        MessageType.userApprove,
-        {'awaitingResponseId': awaitingResponseId},
-      );
+  void approve(String awaitingResponseId) => _send(MessageType.userApprove, {
+    'awaitingResponseId': awaitingResponseId,
+  });
 
-  void reject(String awaitingResponseId) => _send(
-        MessageType.userReject,
-        {'awaitingResponseId': awaitingResponseId},
-      );
+  void reject(String awaitingResponseId) =>
+      _send(MessageType.userReject, {'awaitingResponseId': awaitingResponseId});
 
   void answer(String awaitingResponseId, String answer) => _send(
-        MessageType.userAnswer,
-        {'awaitingResponseId': awaitingResponseId, 'answer': answer},
-      );
+    MessageType.userAnswer,
+    {'awaitingResponseId': awaitingResponseId, 'answer': answer},
+  );
 
   void changeLevel(int newLevel) {
     final level = newLevel.clamp(1, 5).toInt();

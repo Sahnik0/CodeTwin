@@ -8,6 +8,15 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'token_store.dart';
 
+/// Single trusted bridge endpoint used by the mobile app pairing flow.
+const kCodeTwinApiBaseUrl = 'https://codetwin-1quv.onrender.com';
+
+String normalizeApiBaseUrl(String url) {
+  final parsed = Uri.tryParse(url.trim());
+  if (parsed == null || !parsed.hasScheme || parsed.host.isEmpty) return '';
+  return '${parsed.scheme}://${parsed.host}${parsed.hasPort ? ':${parsed.port}' : ''}';
+}
+
 class PairingException implements Exception {
   final String message;
   const PairingException(this.message);

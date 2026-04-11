@@ -7,10 +7,13 @@ import '../widgets/decision_card.dart';
 class ChatMessageList extends StatefulWidget {
   final List<LogEntry> logs;
   final DecisionItem? pendingDecision;
-  final void Function(String awaitingResponseId, String answer)? onDecisionAnswer;
+  final void Function(String awaitingResponseId, String answer)?
+  onDecisionAnswer;
   final void Function(String awaitingResponseId)? onDecisionReject;
   final bool showTimelineLink;
   final VoidCallback? onViewTimeline;
+  final double topPadding;
+  final double bottomPadding;
 
   const ChatMessageList({
     super.key,
@@ -20,6 +23,8 @@ class ChatMessageList extends StatefulWidget {
     this.onDecisionReject,
     this.showTimelineLink = false,
     this.onViewTimeline,
+    this.topPadding = 0.0,
+    this.bottomPadding = 140.0,
   });
 
   @override
@@ -28,11 +33,16 @@ class ChatMessageList extends StatefulWidget {
 
 class _ChatMessageListState extends State<ChatMessageList> {
   final ScrollController _scrollController = ScrollController();
+  static const double _followThresholdPx = 120;
+
+  bool _autoFollow = true;
+  bool _showJumpToLatest = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    _scrollController.addListener(_handleScroll);
+    _scheduleAutoFollow();
   }
 
   @override
@@ -42,25 +52,99 @@ class _ChatMessageListState extends State<ChatMessageList> {
     final hasDecision = widget.pendingDecision != null;
     final hadTimelineLink = oldWidget.showTimelineLink;
     final hasTimelineLink = widget.showTimelineLink;
-    if (widget.logs.length > oldWidget.logs.length ||
+    final hadNewLog = widget.logs.length > oldWidget.logs.length;
+    if (hadNewLog ||
         (!hadDecision && hasDecision) ||
         (!hadTimelineLink && hasTimelineLink)) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+      if (_autoFollow || _isNearBottom()) {
+        _scheduleAutoFollow();
+      } else if (!_showJumpToLatest) {
+        setState(() => _showJumpToLatest = true);
+      }
     }
   }
 
-  void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
-      );
+  void _handleScroll() {
+    if (!_scrollController.hasClients) return;
+    if (!_hasTimelineContent) return;
+
+    final nearBottom = _isNearBottom();
+    if (nearBottom) {
+      if (!_autoFollow || _showJumpToLatest) {
+        setState(() {
+          _autoFollow = true;
+          _showJumpToLatest = false;
+        });
+      }
+      return;
     }
+
+    if (_autoFollow || !_showJumpToLatest) {
+      setState(() {
+        _autoFollow = false;
+        _showJumpToLatest = true;
+      });
+    }
+  }
+
+  bool get _hasTimelineContent {
+    return widget.logs.isNotEmpty ||
+        widget.pendingDecision != null ||
+        widget.showTimelineLink;
+  }
+
+  bool _isNearBottom() {
+    if (!_scrollController.hasClients) return true;
+    final position = _scrollController.position;
+    final distance = position.maxScrollExtent - position.pixels;
+    return distance <= _followThresholdPx;
+  }
+
+  void _scheduleAutoFollow() {
+    if (!_autoFollow) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _scrollToBottom(animated: true);
+
+      Future<void>.delayed(const Duration(milliseconds: 140), () {
+        if (!mounted || !_autoFollow) return;
+        _scrollToBottom(animated: false);
+      });
+
+      Future<void>.delayed(const Duration(milliseconds: 320), () {
+        if (!mounted || !_autoFollow) return;
+        _scrollToBottom(animated: false);
+      });
+    });
+  }
+
+  void _scrollToBottom({required bool animated}) {
+    if (_scrollController.hasClients) {
+      final target = _scrollController.position.maxScrollExtent;
+      if (animated) {
+        _scrollController.animateTo(
+          target,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+        );
+      } else {
+        _scrollController.jumpTo(target);
+      }
+    }
+  }
+
+  void _jumpToLatest() {
+    setState(() {
+      _autoFollow = true;
+      _showJumpToLatest = false;
+    });
+    _scheduleAutoFollow();
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_handleScroll);
     _scrollController.dispose();
     super.dispose();
   }
@@ -71,114 +155,202 @@ class _ChatMessageListState extends State<ChatMessageList> {
         widget.pendingDecision != null &&
         widget.onDecisionAnswer != null &&
         widget.onDecisionReject != null;
-    final showTimelineLink = widget.showTimelineLink && widget.onViewTimeline != null;
+    final showTimelineLink =
+        widget.showTimelineLink && widget.onViewTimeline != null;
     final totalCount =
-      widget.logs.length + (showDecision ? 1 : 0) + (showTimelineLink ? 1 : 0);
+        widget.logs.length +
+        (showDecision ? 1 : 0) +
+        (showTimelineLink ? 1 : 0);
 
-    return ListView.separated(
-      controller: _scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: totalCount,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        if (showDecision && index == widget.logs.length) {
-          return Align(
-            alignment: Alignment.centerLeft,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.9,
-              ),
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: 1),
-                duration: const Duration(milliseconds: 260),
-                curve: Curves.easeOutCubic,
-                builder: (context, value, child) {
-                  return Opacity(
-                    opacity: value,
-                    child: Transform.translate(
-                      offset: Offset(0, (1 - value) * 16),
-                      child: child,
-                    ),
-                  );
-                },
-                child: DecisionCard(
-                  item: widget.pendingDecision!,
-                  inChat: true,
-                  onAnswer: widget.onDecisionAnswer!,
-                  onReject: widget.onDecisionReject!,
-                ),
-              ),
-            ),
-          );
-        }
+    final jumpBottom = widget.bottomPadding > 96
+        ? widget.bottomPadding - 92
+        : 12.0;
 
-        final timelineIndex = widget.logs.length + (showDecision ? 1 : 0);
-        if (showTimelineLink && index == timelineIndex) {
-          final cli = CliTheme.of(context);
-          return Align(
-            alignment: Alignment.centerLeft,
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: widget.onViewTimeline,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  decoration: cli.box(
-                    borderColor: cli.border,
-                    bgColor: cli.surface,
-                    radius: 12,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.chevron_right, size: 16, color: cli.accent),
-                      const SizedBox(width: 6),
-                      Text(
-                        'View process timeline',
-                        style: cli.mono.copyWith(
-                          color: cli.accent,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        }
-
-        final entry = widget.logs[index];
-        final isUser = entry.message.startsWith('> Task:') || entry.message.startsWith('> Answer:');
-
-        if (!isUser && entry.structuredType == 'reasoning') {
-          return _ThinkingEventCard(entry: entry);
-        }
-
-        if (!isUser &&
-            (entry.structuredType == 'step_start' ||
-                entry.structuredType == 'step_finish')) {
-          return _StepEventCard(entry: entry);
-        }
-
-        if (!isUser && entry.structuredType == 'tool_use') {
-          return _StepEventCard(entry: entry, isToolEvent: true);
-        }
-        
-        return Align(
-          alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-          child: _AnimatedChatBubble(
-            key: ValueKey(entry.id),
-            entry: entry,
-            isUser: isUser,
+    return Stack(
+      children: [
+        ListView.separated(
+          controller: _scrollController,
+          padding: EdgeInsets.only(
+            top: widget.topPadding > 0 ? widget.topPadding : 8,
+            bottom: widget.bottomPadding,
+            left: 16,
+            right: 16,
           ),
-        );
-      },
+          itemCount: totalCount,
+          separatorBuilder: (context, index) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            if (showDecision && index == widget.logs.length) {
+              return Align(
+                alignment: Alignment.centerLeft,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: MediaQuery.of(context).size.width * 0.9,
+                  ),
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: 1),
+                    duration: const Duration(milliseconds: 260),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, value, child) {
+                      return Opacity(
+                        opacity: value,
+                        child: Transform.translate(
+                          offset: Offset(0, (1 - value) * 16),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: DecisionCard(
+                      item: widget.pendingDecision!,
+                      inChat: true,
+                      onAnswer: widget.onDecisionAnswer!,
+                      onReject: widget.onDecisionReject!,
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            final timelineIndex = widget.logs.length + (showDecision ? 1 : 0);
+            if (showTimelineLink && index == timelineIndex) {
+              final cli = CliTheme.of(context);
+              return Align(
+                alignment: Alignment.centerLeft,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: widget.onViewTimeline,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: cli.box(
+                        borderColor: cli.border,
+                        bgColor: cli.surface,
+                        radius: 12,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.chevron_right,
+                            size: 16,
+                            color: cli.accent,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'View process timeline',
+                            style: cli.mono.copyWith(
+                              color: cli.accent,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            final entry = widget.logs[index];
+            final isUser =
+                entry.message.startsWith('> Task:') ||
+                entry.message.startsWith('> Answer:');
+
+            if (!isUser && entry.structuredType == 'reasoning') {
+              return _ThinkingEventCard(entry: entry);
+            }
+
+            if (!isUser &&
+                (entry.structuredType == 'step_start' ||
+                    entry.structuredType == 'step_finish')) {
+              return _StepEventCard(entry: entry);
+            }
+
+            if (!isUser && entry.structuredType == 'tool_use') {
+              return _StepEventCard(entry: entry, isToolEvent: true);
+            }
+
+            return Align(
+              alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+              child: _AnimatedChatBubble(
+                key: ValueKey(entry.id),
+                entry: entry,
+                isUser: isUser,
+              ),
+            );
+          },
+        ),
+        Positioned(
+          right: 20,
+          bottom: jumpBottom,
+          child: AnimatedSlide(
+            duration: const Duration(milliseconds: 180),
+            offset: _showJumpToLatest ? Offset.zero : const Offset(0, 1.1),
+            curve: Curves.easeOutCubic,
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 180),
+              opacity: _showJumpToLatest ? 1 : 0,
+              child: IgnorePointer(
+                ignoring: !_showJumpToLatest,
+                child: _JumpToLatestButton(onTap: _jumpToLatest),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _JumpToLatestButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _JumpToLatestButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cli = CliTheme.of(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: cli.surface,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: cli.accent.withValues(alpha: 0.45)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.24),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.arrow_downward_rounded, size: 16, color: cli.accent),
+              const SizedBox(width: 6),
+              Text(
+                'Latest',
+                style: cli.mono.copyWith(
+                  color: cli.accent,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -188,10 +360,10 @@ class _AnimatedChatBubble extends StatefulWidget {
   final bool isUser;
 
   const _AnimatedChatBubble({
-    Key? key,
+    super.key,
     required this.entry,
     required this.isUser,
-  }) : super(key: key);
+  });
 
   @override
   State<_AnimatedChatBubble> createState() => _AnimatedChatBubbleState();
@@ -224,10 +396,7 @@ class _AnimatedChatBubbleState extends State<_AnimatedChatBubble>
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0.0, 0.2),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     _controller.forward();
   }
@@ -247,7 +416,9 @@ class _AnimatedChatBubbleState extends State<_AnimatedChatBubble>
         position: _slideAnimation,
         child: ScaleTransition(
           scale: _scaleAnimation,
-          alignment: widget.isUser ? Alignment.bottomRight : Alignment.bottomLeft,
+          alignment: widget.isUser
+              ? Alignment.bottomRight
+              : Alignment.bottomLeft,
           child: _ChatBubble(entry: widget.entry, isUser: widget.isUser),
         ),
       ),
@@ -264,7 +435,7 @@ class _ChatBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cli = CliTheme.of(context);
-    
+
     // Extract actual message if it's a user command
     String displayMessage = entry.message;
     if (isUser && displayMessage.startsWith('> Task: ')) {
@@ -274,13 +445,9 @@ class _ChatBubble extends StatelessWidget {
     }
 
     // Determine bubble styling
-    Color bgColor = isUser 
-      ? cli.accentDim
-      : Colors.grey.shade900;
-    
-    Color textColor = isUser
-      ? Colors.white
-      : Colors.white;
+    Color bgColor = isUser ? cli.accentDim : Colors.grey.shade900;
+
+    Color textColor = isUser ? Colors.white : Colors.white;
 
     if (entry.level == AgentLogLevel.error) {
       bgColor = cli.redMuted;
@@ -309,10 +476,9 @@ class _ChatBubble extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: bgColor,
-          border: isUser ? null : Border.all(
-            color: Colors.grey.shade700,
-            width: 1,
-          ),
+          border: isUser
+              ? null
+              : Border.all(color: Colors.grey.shade700, width: 1),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -328,10 +494,17 @@ class _ChatBubble extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(leftIcon, size: 14, color: textColor.withValues(alpha: 0.7)),
+                  Icon(
+                    leftIcon,
+                    size: 14,
+                    color: textColor.withValues(alpha: 0.7),
+                  ),
                   const SizedBox(width: 6),
                   Text(
-                    entry.toolName ?? (entry.level == AgentLogLevel.error ? 'Error' : 'Agent'),
+                    entry.toolName ??
+                        (entry.level == AgentLogLevel.error
+                            ? 'Error'
+                            : 'Agent'),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -344,11 +517,7 @@ class _ChatBubble extends StatelessWidget {
             ],
             Text(
               displayMessage,
-              style: TextStyle(
-                color: textColor,
-                fontSize: 15,
-                height: 1.3,
-              ),
+              style: TextStyle(color: textColor, fontSize: 15, height: 1.3),
             ),
           ],
         ),
@@ -371,14 +540,14 @@ class _StepEventCard extends StatelessWidget {
     final icon = isToolEvent
         ? Icons.build_circle_outlined
         : isStart
-            ? Icons.play_arrow_rounded
-            : Icons.check_circle_outline;
+        ? Icons.play_arrow_rounded
+        : Icons.check_circle_outline;
 
     final title = isToolEvent
         ? 'Tool Event'
         : isStart
-            ? 'Step Started'
-            : 'Step Completed';
+        ? 'Step Started'
+        : 'Step Completed';
 
     return Container(
       margin: const EdgeInsets.only(right: 36),
@@ -468,10 +637,7 @@ class _ThinkingEventCard extends StatelessWidget {
             preview,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: cli.mono.copyWith(
-              color: cli.textDim,
-              fontSize: 11,
-            ),
+            style: cli.mono.copyWith(color: cli.textDim, fontSize: 11),
           ),
           children: [
             _TypewriterText(

@@ -56,17 +56,17 @@ class _DaemonStatusBarState extends ConsumerState<DaemonStatusBar>
     switch (conn.pairingStatus) {
       case PairingStatus.paired:
         bg = Colors.green.shade900;
-        fg = Colors.green.shade200;
+        fg = Colors.white;
         icon = Icons.wifi;
         break;
       case PairingStatus.connecting:
         bg = Colors.blue.shade900;
-        fg = Colors.blue.shade200;
+        fg = Colors.white;
         icon = Icons.autorenew;
         break;
       default:
         bg = Colors.grey.shade900;
-        fg = Colors.grey.shade200;
+        fg = Colors.white;
         icon = Icons.wifi_off;
         break;
     }
@@ -88,14 +88,13 @@ class _DaemonStatusBarState extends ConsumerState<DaemonStatusBar>
         decoration: BoxDecoration(
           color: bg,
           shape: BoxShape.circle,
-          border: Border.all(
-            color: fg.withValues(alpha: 0.8),
-            width: 1.2,
-          ),
+          border: Border.all(color: fg.withValues(alpha: 0.8), width: 1.2),
         ),
         padding: const EdgeInsets.all(8),
         child: RotationTransition(
-          turns: isConnecting ? _spinController : const AlwaysStoppedAnimation(0),
+          turns: isConnecting
+              ? _spinController
+              : const AlwaysStoppedAnimation(0),
           child: Icon(icon, color: fg, size: 18),
         ),
       ),

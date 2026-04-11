@@ -1,4 +1,4 @@
-/// Settings screen — pairing info, level override, notifications, app version.
+// Settings screen — pairing info, level override, notifications, app version.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +8,7 @@ import '../providers/session_provider.dart';
 import '../providers/notifications_provider.dart';
 import '../providers/daemon_actions_provider.dart';
 import '../widgets/level_picker.dart';
+import '../widgets/restart_widget.dart';
 import '../services/token_store.dart';
 import '../services/socket_service.dart';
 
@@ -21,7 +22,8 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
-    final conn = ref.watch(connectionProvider).valueOrNull ??
+    final conn =
+        ref.watch(connectionProvider).valueOrNull ??
         DaemonConnectionState.empty;
     final session =
         ref.watch(sessionProvider).valueOrNull ?? SessionState.empty;
@@ -50,13 +52,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 // Pairing ID row
                 ListTile(
                   leading: const Icon(Icons.link, color: Colors.white70),
-                  title: const Text('Pairing ID', style: TextStyle(color: Colors.white)),
+                  title: const Text(
+                    'Pairing ID',
+                    style: TextStyle(color: Colors.white),
+                  ),
                   subtitle: Text(
                     conn.pairingId ?? 'Not paired',
                     style: TextStyle(
-                        fontFamily: 'monospace',
-                        color: Colors.white.withValues(alpha: 0.4),
-                        fontSize: 12),
+                      fontFamily: 'monospace',
+                      color: Colors.white.withValues(alpha: 0.4),
+                      fontSize: 12,
+                    ),
                   ),
                 ),
                 Divider(height: 1, color: Colors.white.withValues(alpha: 0.05)),
@@ -64,13 +70,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 // Mobile Device ID
                 ListTile(
                   leading: const Icon(Icons.smartphone, color: Colors.white70),
-                  title: const Text('Mobile Device ID', style: TextStyle(color: Colors.white)),
+                  title: const Text(
+                    'Mobile Device ID',
+                    style: TextStyle(color: Colors.white),
+                  ),
                   subtitle: Text(
                     conn.mobileDeviceId ?? 'Not paired',
                     style: TextStyle(
-                        fontFamily: 'monospace',
-                        color: Colors.white.withValues(alpha: 0.4),
-                        fontSize: 12),
+                      fontFamily: 'monospace',
+                      color: Colors.white.withValues(alpha: 0.4),
+                      fontSize: 12,
+                    ),
                   ),
                 ),
                 Divider(height: 1, color: Colors.white.withValues(alpha: 0.05)),
@@ -78,10 +88,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 // Server URL
                 ListTile(
                   leading: const Icon(Icons.cloud, color: Colors.white70),
-                  title: const Text('Server URL', style: TextStyle(color: Colors.white)),
+                  title: const Text(
+                    'Server URL',
+                    style: TextStyle(color: Colors.white),
+                  ),
                   subtitle: Text(
-                    conn.apiBaseUrl.isEmpty ? 'Not configured' : conn.apiBaseUrl,
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                    conn.apiBaseUrl.isEmpty
+                        ? 'Not configured'
+                        : conn.apiBaseUrl,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.4),
+                    ),
                   ),
                 ),
                 Divider(height: 1, color: Colors.white.withValues(alpha: 0.05)),
@@ -90,13 +107,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 if (conn.tokenExpiresAt != null)
                   ListTile(
                     leading: const Icon(Icons.schedule, color: Colors.white70),
-                    title: const Text('Token Expires', style: TextStyle(color: Colors.white)),
+                    title: const Text(
+                      'Token Expires',
+                      style: TextStyle(color: Colors.white),
+                    ),
                     subtitle: Text(
                       _formatExpiry(conn.tokenExpiresAt!),
                       style: TextStyle(
-                          color: _isTokenExpiringSoon(conn.tokenExpiresAt!)
-                              ? Colors.orangeAccent
-                              : Colors.white.withValues(alpha: 0.4)),
+                        color: _isTokenExpiringSoon(conn.tokenExpiresAt!)
+                            ? Colors.orangeAccent
+                            : Colors.white.withValues(alpha: 0.4),
+                      ),
                     ),
                   ),
                 Divider(height: 1, color: Colors.white.withValues(alpha: 0.05)),
@@ -104,12 +125,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 // Connection status
                 ListTile(
                   leading: const Icon(Icons.sync, color: Colors.white70),
-                  title: const Text('Worker', style: TextStyle(color: Colors.white)),
+                  title: const Text(
+                    'Worker',
+                    style: TextStyle(color: Colors.white),
+                  ),
                   subtitle: Text(
-                      conn.pairingStatus.name,
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.4))),
+                    conn.pairingStatus.name,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.4),
+                    ),
+                  ),
                   trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: conn.daemonConnected
                           ? Colors.teal.withValues(alpha: 0.15)
@@ -145,8 +175,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       },
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.5)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        side: BorderSide(
+                          color: Colors.redAccent.withValues(alpha: 0.5),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         foregroundColor: Colors.redAccent,
                       ),
                       icon: const Icon(Icons.link_off),
@@ -154,7 +188,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                   ),
                 ),
-              ]
+              ],
             ),
           ),
 
@@ -189,23 +223,62 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             child: Column(
               children: [
                 SwitchListTile(
-                  title: const Text('Push notifications', style: TextStyle(color: Colors.white)),
+                  title: const Text(
+                    'Push notifications',
+                    style: TextStyle(color: Colors.white),
+                  ),
                   subtitle: Text(
                     'Receive alerts when the agent needs approval or a task completes.',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.4),
+                    ),
                   ),
-                  activeColor: const Color(0xFF20B2AA),
+                  activeThumbColor: const Color(0xFF20B2AA),
                   value: notif.enabled,
                   onChanged: (v) =>
                       ref.read(notificationsProvider.notifier).setEnabled(v),
                 ),
                 Divider(height: 1, color: Colors.white.withValues(alpha: 0.05)),
                 ListTile(
-                  leading: const Icon(Icons.info_outline, color: Colors.white70),
-                  title: const Text('CodeTwin Version', style: TextStyle(color: Colors.white)),
-                  trailing: Text('v1.0.0 (Premium)', style: TextStyle(color: Colors.white.withValues(alpha: 0.4))),
+                  leading: const Icon(
+                    Icons.info_outline,
+                    color: Colors.white70,
+                  ),
+                  title: const Text(
+                    'CodeTwin Version',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  trailing: Text(
+                    'v1.0.0 (Premium)',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.4),
+                    ),
+                  ),
                 ),
-              ]
+                Divider(height: 1, color: Colors.white.withValues(alpha: 0.05)),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        RestartWidget.restartApp(context);
+                      },
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        side: BorderSide(
+                          color: Colors.redAccent.withValues(alpha: 0.6),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        foregroundColor: Colors.redAccent,
+                      ),
+                      child: const Text('Restart'),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 32),

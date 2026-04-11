@@ -56,7 +56,7 @@ class _TaskInputState extends State<TaskInput> {
       curve: Curves.easeOutCubic,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF16161A), // Solid sleek background
+        color: const Color(0xFF000000), // Pure black background
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
           color: isFocused
@@ -90,9 +90,11 @@ class _TaskInputState extends State<TaskInput> {
                   height: 1.4,
                 ),
                 decoration: InputDecoration(
-                  hintText: 'Ask CodeTwin to do something...',
+                  hintText: 'Ask CodeTwin..',
+                  filled: true,
+                  fillColor: Colors.black,
                   hintStyle: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.3),
+                    color: const Color(0xFF8A8A8A),
                     fontSize: 15,
                   ),
                   border: InputBorder.none,
@@ -128,7 +130,9 @@ class _TaskInputState extends State<TaskInput> {
                           backgroundColor: primaryColor,
                           foregroundColor: Colors.white,
                           shape: const CircleBorder(),
-                          padding: const EdgeInsets.all(8), // Make inner icon slightly tighter
+                          padding: const EdgeInsets.all(
+                            8,
+                          ), // Make inner icon slightly tighter
                         ),
                         icon: const Icon(Icons.arrow_upward, size: 20),
                       ),
