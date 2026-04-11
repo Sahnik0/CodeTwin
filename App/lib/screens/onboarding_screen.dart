@@ -79,7 +79,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     iconColor: primaryColor,
                     title: 'Ready To Connect?',
                     description:
-                        'Open your project terminal, run codetwin login with your bridge URL, then enter the 12-character pairing code on the Pair screen to link this device.',
+                        'Open your project terminal, run codetwin login, then scan the QR in this app (or enter the 12-character code manually).',
                     isLast: true,
                     primaryColor: primaryColor,
                   ),
