@@ -21,6 +21,14 @@ export const metadata: Metadata = {
     description: 'Terminal AI coding agent. Your machine. Your rules.',
   },
   metadataBase: new URL('https://CodeTwin.dev'),
+  icons: {
+    icon: [
+      { url: '/favicon.svg?v=1', type: 'image/svg+xml' },
+      { url: '/final-logo.png?v=2', type: 'image/png' },
+    ],
+    shortcut: [{ url: '/favicon.svg?v=1', type: 'image/svg+xml' }],
+    apple: [{ url: '/final-logo.png?v=2', type: 'image/png' }],
+  },
 }
 
 export default function RootLayout({
