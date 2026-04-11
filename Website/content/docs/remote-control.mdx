@@ -4,7 +4,13 @@ title: Remote Control
 
 # Remote Control
 
-CodeTwin supports remote control through a bridge workflow. You can pair a mobile app with a CLI device and execute tasks through a worker connection.
+CodeTwin supports remote control through a bridge workflow. This mobile-to-CLI connection is a key part of CodeTwin's USP: control an agent running on your laptop from your phone.
+
+## Architecture at a glance
+
+- CLI device: runs CodeTwin and the worker.
+- Mobile app: sends tasks, approvals, and decisions.
+- Bridge server: relays messages between app and worker.
 
 ## Hosted bridge flow (recommended)
 
@@ -14,12 +20,23 @@ CodeTwin supports remote control through a bridge workflow. You can pair a mobil
 codetwin login https://codetwin-1quv.onrender.com
 ```
 
-2. Enter the pairing code in the mobile app Pair screen.
-3. Start worker:
+2. Copy the 12-character pairing code shown in terminal.
+3. Open mobile app Pair screen and enter the same bridge URL and code.
+4. Start worker:
 
 ```bash
 codetwin worker
 ```
+
+5. Confirm status in the app is connected.
+
+## QR pairing flow (fast path)
+
+If you prefer scanning instead of typing the pairing code:
+
+1. On the laptop running the CLI daemon, open https://code-twin.vercel.app/connect.
+2. Scan the QR from your phone.
+3. Confirm pairing in the app, then run worker if needed.
 
 For local source installs, use your launcher path:
 
@@ -60,5 +77,6 @@ Normal users do not need to manually supply REMOTE_EXEC_TOKEN for this flow.
 
 - Pairing code expired: run login again to generate a new code.
 - Worker not connecting: verify the same bridge URL is used for both app and CLI.
+- App not showing your device: confirm worker is running and laptop internet is available.
 - Credentials stale: re-run login, then restart worker.
 

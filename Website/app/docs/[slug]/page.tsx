@@ -12,6 +12,7 @@ const orderedPages = [
   { slug: 'twin-memory', title: 'Twin Memory', group: 'Core concepts' },
   { slug: 'providers', title: 'Providers', group: 'Providers' },
   { slug: 'tools', title: 'Tools', group: 'Tools' },
+  { slug: 'mobile-connection', title: 'Mobile Connection', group: 'Remote control' },
   { slug: 'remote-control', title: 'Remote Control', group: 'Remote control' },
   { slug: 'cli-reference', title: 'CLI Reference', group: 'CLI reference' },
 ]
@@ -21,6 +22,7 @@ const slugMap: Record<string, string> = {
   'getting-started': 'getting-started.mdx',
   providers: 'providers.mdx',
   'dependence-levels': 'dependence-levels.mdx',
+  'mobile-connection': 'mobile-connection.mdx',
   'remote-control': 'remote-control.mdx',
   'twin-memory': 'twin-memory.mdx',
   tools: 'tools.mdx',
@@ -85,6 +87,67 @@ function escapeHtml(unsafe: string) {
          .replace(/'/g, "&#039;");
 }
 
+function wrapListBlocks(html: string): string {
+  const lines = html.split('\n')
+  const wrapped: string[] = []
+  let currentListType: 'ol' | 'ul' | null = null
+
+  function closeList() {
+    if (currentListType === 'ol') {
+      wrapped.push('</ol>')
+    }
+
+    if (currentListType === 'ul') {
+      wrapped.push('</ul>')
+    }
+
+    currentListType = null
+  }
+
+  for (const rawLine of lines) {
+    const orderedMatch = rawLine.match(/^<li data-list="ol" data-index="(\d+)" class="([^"]+)">([\s\S]*)<\/li>$/)
+
+    if (orderedMatch) {
+      const [, start, classes, content] = orderedMatch
+
+      if (currentListType !== 'ol') {
+        closeList()
+        const startAttr = start !== '1' ? ` start="${start}"` : ''
+        wrapped.push(`<ol${startAttr} class="my-3 space-y-1">`)
+        currentListType = 'ol'
+      }
+
+      wrapped.push(`<li class="${classes}">${content}</li>`)
+      continue
+    }
+
+    const unorderedMatch = rawLine.match(/^<li data-list="ul" class="([^"]+)">([\s\S]*)<\/li>$/)
+
+    if (unorderedMatch) {
+      const [, classes, content] = unorderedMatch
+
+      if (currentListType !== 'ul') {
+        closeList()
+        wrapped.push('<ul class="my-3 space-y-1">')
+        currentListType = 'ul'
+      }
+
+      wrapped.push(`<li class="${classes}">${content}</li>`)
+      continue
+    }
+
+    if (!rawLine.trim() && currentListType) {
+      continue
+    }
+
+    closeList()
+    wrapped.push(rawLine)
+  }
+
+  closeList()
+  return wrapped.join('\n')
+}
+
 // Improved markdown renderer for inline styles
 function renderMarkdown(md: string): string {
   let html = md.replace(/\r\n/g, '\n')
@@ -98,14 +161,14 @@ function renderMarkdown(md: string): string {
     .replace(/^### (.+)$/gm, (m, title) => `<h3 id="${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}" class="text-base md:text-lg font-bold text-text-primary mt-10 mb-4 flex items-center gap-3 tracking-tight"><div class="w-1.5 h-5 bg-gradient-to-b from-[#a6a6ed] to-[#7373ed] rounded-full shadow-[0_0_8px_rgba(166,166,237,0.4)]"></div>${title}</h3>`)
     .replace(/^## (.+)$/gm, (m, title) => `<h2 id="${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}" class="text-xl md:text-2xl font-bold text-text-primary mt-12 mb-5 pb-2 tracking-tight group"><span class="border-b-2 border-border-default group-hover:border-[#a6a6ed] transition-colors pb-1.5">${title}</span></h2>`)
     .replace(/^# (.+)$/gm, (m, title) => `<h1 class="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary via-text-primary to-[#a6a6ed] mb-10 tracking-tight leading-tight drop-shadow-sm">${title}</h1>`)
-    .replace(/^- (.+)$/gm, '<li class="text-text-secondary text-[14px] md:text-[15px] ml-6 list-disc mb-2 pl-1 marker:text-[#a6a6ed] font-medium">$1</li>')
-    .replace(/^\d+\. (.+)$/gm, '<li class="text-text-secondary text-[14px] md:text-[15px] ml-6 list-decimal mb-2 pl-1 marker:text-[#a6a6ed] font-bold">$1</li>')
+    .replace(/^- (.+)$/gm, '<li data-list="ul" class="text-text-secondary text-[14px] md:text-[15px] ml-6 list-disc mb-2 pl-1 marker:text-[#a6a6ed] font-medium">$1</li>')
+    .replace(/^(\d+)\. (.+)$/gm, '<li data-list="ol" data-index="$1" class="text-text-secondary text-[14px] md:text-[15px] ml-6 list-decimal mb-2 pl-1 marker:text-[#a6a6ed] font-bold">$2</li>')
     .replace(/^> (.+)$/gm, '<blockquote class="border-l-4 border-[#a6a6ed] pl-4 py-2 text-base italic text-text-primary font-medium my-6 bg-gradient-to-r from-[#a6a6ed]/10 to-transparent rounded-r-lg">$1</blockquote>')
     .replace(/^(?!<(?:h|li|blockquote|a)).+$/gm, (line) =>
       line.trim() ? `<p class="text-[14px] md:text-[15px] text-text-secondary leading-relaxed mb-5 font-medium">${line.trim()}</p>` : ''
     )
 
-  return html
+  return wrapListBlocks(html)
 }
 
 interface DocsPageProps {

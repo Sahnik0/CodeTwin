@@ -4,7 +4,7 @@ title: Getting Started
 
 # Getting Started
 
-CodeTwin is a terminal-first AI coding agent that runs on your machine. This guide covers installation, provider authentication, your first task, and mobile pairing.
+CodeTwin is a terminal-first AI coding agent that runs on your machine. This guide covers installation, provider authentication, your first task, and mobile connection.
 
 ## Installation
 
@@ -91,37 +91,40 @@ Override autonomy for a single run:
 codetwin run "add tests for auth middleware" --dependence-level 3
 ```
 
-## Mobile pairing and worker
+## Mobile connection (CodeTwin USP)
 
-Mobile app is optional and mainly for remote usage while away from your laptop.
+Mobile connection is one of CodeTwin's core differentiators: your laptop runs the agent while your phone can monitor, approve, and steer runs remotely.
 
 If you are only using local CLI/TUI, you can skip this section.
 
-Mobile app download:
-
-- Drive link: PENDING (maintainer will add)
-
-Pair this CLI device with a bridge:
+1. Pair this CLI device with a bridge:
 
 ```bash
 codetwin login https://codetwin-1quv.onrender.com
 ```
 
-Then:
-
-1. Copy the 12-character pairing code printed in terminal.
-2. Open mobile app Pair screen.
-3. Enter the same bridge URL and code.
-4. Start worker:
+2. Copy the 12-character pairing code printed in terminal.
+3. Open the mobile app Pair screen.
+4. Enter the same bridge URL and code.
+5. Start worker:
 
 ```bash
 codetwin worker
 ```
 
+6. Confirm the app shows your CLI device as connected.
+
+Optional QR flow:
+
+- On the laptop running CodeTwin, open https://code-twin.vercel.app/connect.
+- Scan the QR from your phone to prefill pairing details.
+
 For local source installs, use the repo launcher variants:
 
 - Windows: .\CLI\codetwin.cmd login ... and .\CLI\codetwin.cmd worker
 - Linux/macOS: ./CLI/codetwin login ... and ./CLI/codetwin worker
+
+For complete details and troubleshooting, see [Mobile Connection](/docs/mobile-connection) and [Remote Control](/docs/remote-control).
 
 ## Config locations
 
