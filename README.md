@@ -40,6 +40,28 @@ Public links:
 
 ## Basic User Guide (Recommended)
 
+### 0) Verify Bun Installation (Windows)
+
+Check if Bun is already installed:
+
+```powershell
+bun --version
+```
+
+If Bun is missing, run this install command:
+
+```powershell
+powershell -c "irm https://bun.sh/install.ps1 | iex"
+```
+
+Auto-check and install in one step:
+
+```powershell
+if (Get-Command bun -ErrorAction SilentlyContinue) { bun --version } else { powershell -c "irm https://bun.sh/install.ps1 | iex" }
+```
+
+After installation, open a new terminal and run `bun --version` again.
+
 ### 1) Install CLI (One-Liner)
 
 Windows PowerShell:
@@ -249,6 +271,10 @@ Linux/macOS:
 - `codetwin` not found after one-liner install:
   - open a new terminal
   - ensure your PATH update is applied
+- `bun` not found while running from source:
+  - run `bun --version`
+  - if command not found, run `powershell -c "irm https://bun.sh/install.ps1 | iex"`
+  - open a new terminal and verify `bun --version`
 - Pairing code expired:
   - rerun `codetwin login` and enter the new code
 - Worker not connecting:

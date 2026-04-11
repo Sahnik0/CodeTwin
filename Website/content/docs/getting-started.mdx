@@ -8,6 +8,26 @@ CodeTwin is a terminal-first AI coding agent that runs on your machine. This gui
 
 ## Installation
 
+### Verify Bun (Windows)
+
+Check whether Bun is already installed:
+
+```powershell
+bun --version
+```
+
+If Bun is not installed, run:
+
+```powershell
+powershell -c "irm https://bun.sh/install.ps1 | iex"
+```
+
+Windows one-step verify + install:
+
+```powershell
+if (Get-Command bun -ErrorAction SilentlyContinue) { bun --version } else { powershell -c "irm https://bun.sh/install.ps1 | iex" }
+```
+
 ### Windows one-liner (PowerShell)
 
 ```powershell
