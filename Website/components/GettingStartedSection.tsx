@@ -188,9 +188,6 @@ export default function GettingStartedSection() {
               <Suspense fallback={<div className="h-12 bg-background rounded-lg border border-border-default animate-pulse" />}>
                 <InstallStrip />
               </Suspense>
-              <p className="mt-3 text-[11px] text-text-muted font-mono">
-                Windows PowerShell: irm https://code-twin.vercel.app/install.ps1 | iex
-              </p>
 
               {/* Checklist */}
               <ul className="mt-5 flex flex-col gap-2.5">
