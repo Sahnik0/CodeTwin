@@ -4,54 +4,56 @@ title: Dependence Levels
 
 # Dependence Levels
 
-CodeTwin has five autonomy levels. You set the level once in config, and can change it mid-task with `CodeTwin level <n>`.
+CodeTwin has five autonomy levels. Set it per run using --dependence-level.
+
+Example:
+
+```bash
+codetwin run "refactor auth service" --dependence-level 3
+```
 
 ## Level 1 — Full supervision
 
 Ask before every file write, delete, or shell command. Nothing executes without your approval. Best for unfamiliar codebases or high-risk refactors.
 
 ```bash
-CodeTwin level 1
+codetwin run "task" --dependence-level 1
 ```
 
 ## Level 2 — Reads are free
 
-Silent on reads and status checks. Always asks before writes, deletes, or installs. You see everything that changes but don't get interrupted on analysis actions.
+Allows read-only actions automatically. Asks before write-like actions.
 
 ```bash
-CodeTwin level 2
+codetwin run "task" --dependence-level 2
 ```
 
 ## Level 3 — Smart checkpoints (default)
 
-Executes clear single-path actions automatically. Asks when multiple valid approaches exist, or when blast radius is HIGH. The balanced default for most workflows.
+Allows most actions. Still asks for explicit question/approval checkpoints.
 
 ```bash
-CodeTwin level 3
+codetwin run "task" --dependence-level 3
 ```
 
 ## Level 4 — Destructive only
 
-Runs freely until something gets deleted, overwritten, deployed, or pushed. Then it stops and asks. Good for greenfield code where you trust early-stage writes.
+Allows all actions except destructive classes, which still require approval.
 
 ```bash
-CodeTwin level 4
+codetwin run "task" --dependence-level 4
 ```
 
 ## Level 5 — Full delegation
 
-Execute and report. Interrupts only if the delegation budget allows and task complexity is critical. Use for trusted, well-constrained tasks in stable codebases.
+Allows all actions and suppresses question prompts.
 
 ```bash
-CodeTwin level 5
+codetwin run "task" --dependence-level 5
 ```
 
-## Changing level mid-task
+## Notes
 
-You can switch level at any time from within the TUI by typing:
-
-```
-/level 3
-```
-
-Or from the mobile app, tap the level badge in the task header.
+- Valid range is 1 through 5.
+- If omitted, default behavior is equivalent to level 3.
+- You can keep daily work at a safer level and only raise autonomy for trusted, repetitive tasks.

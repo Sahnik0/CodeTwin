@@ -11,21 +11,21 @@ const steps = [
     icon: <Download size={14} />,
     title: 'Install CodeTwin',
     description: 'One command to install globally via npm or a shell script.',
-    code: 'npm install -g CodeTwin',
+    code: 'curl -fsSL https://code-twin.vercel.app/install.sh | bash',
   },
   {
     num: '02',
     icon: <Settings size={14} />,
-    title: 'Configure Your Project',
-    description: 'Run the interactive setup to choose your LLM provider and autonomy level.',
-    code: 'cd your-project && CodeTwin config init',
+    title: 'Authenticate Provider',
+    description: 'Log in to your preferred LLM provider and verify credentials.',
+    code: 'codetwin providers login && codetwin providers list',
   },
   {
     num: '03',
     icon: <Play size={14} />,
     title: 'Start Coding with Your Agent',
-    description: 'Open the TUI and start issuing tasks in natural language.',
-    code: 'CodeTwin start',
+    description: 'Open the TUI in your project and issue tasks in natural language.',
+    code: 'cd your-project && codetwin',
   },
 ]
 

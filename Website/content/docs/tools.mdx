@@ -4,71 +4,54 @@ title: Tools
 
 # Tools
 
-CodeTwin has a defined set of tools it uses to interact with your codebase. Each tool corresponds to a specific class of action. You see every tool invocation in the pre-flight map before it runs.
+CodeTwin uses a defined toolset to inspect code, modify files, run commands, and delegate subtasks. Tool execution visibility and approvals depend on your dependence level.
 
-## read
+## Read and discovery tools
 
-Reads the content of a file. Never modifies anything.
+- read
+- list
+- glob
+- grep
+- codesearch
+- websearch
+- webfetch
+- lsp
+- skill
 
-```
-read(path: string): string
-```
+These tools gather context without directly changing your workspace.
 
-Triggered when CodeTwin needs to understand existing code. Silent at all dependence levels.
+## Edit and write tools
 
-## write
+- edit
+- write
+- multiedit
+- patch
+- todowrite
 
-Writes content to a file. Creates the file if it does not exist.
+These tools create or modify files and plans.
 
-```
-write(path: string, content: string): void
-```
+## Execution tools
 
-Always shown in the pre-flight map. At level 1 and 2, requires explicit approval before running.
+- bash
+- task
 
-## edit
+bash runs shell commands. task delegates to a subagent.
 
-Applies a targeted edit to an existing file: insert, replace, or delete a range of lines.
+## Approval behavior by level
 
-```
-edit(path: string, range: LineRange, replacement: string): void
-```
+- Level 1 asks before all actions.
+- Level 2 auto-allows read/discovery and asks on write-like actions.
+- Level 3 auto-allows most actions with selective checkpoints.
+- Level 4 asks for destructive classes.
+- Level 5 runs with full delegation.
 
-More surgical than `write` — CodeTwin prefers `edit` when changing existing files to reduce blast radius.
+## Extending with project tools
 
-## bash
+Custom project tools can be added under your repository .codetwin tools/plugin directories.
 
-Runs a shell command in the project directory.
+Common patterns:
 
-```
-bash(command: string, timeout?: number): ShellResult
-```
+- .codetwin/tools for tool implementations
+- .codetwin/plugin for event hooks/integrations
 
-Default timeout is 30 seconds. Commands that exceed this are terminated and reported as failures. Always shown in the pre-flight map. At level 1, requires approval.
-
-## git
-
-High-level git operations. Wraps `bash` with structured output parsing.
-
-```
-git.status(): GitStatus
-git.diff(path?: string): string
-git.commit(message: string): void
-git.push(remote?: string, branch?: string): void
-```
-
-`git.push` is treated as a destructive action at all levels — it always requires confirmation unless level 5 is set with an explicit delegation budget.
-
-## Custom tools
-
-You can define project-specific tools in `.CodeTwin/tools.json`. Custom tools are shell commands wrapped with a name and description. CodeTwin will use them when the task matches the described capability.
-
-```json
-[
-  {
-    "name": "test",
-    "description": "Run the test suite",
-    "command": "pnpm test"
-  }
-]
-```
+Use these for project-specific automation that the agent can call during tasks.

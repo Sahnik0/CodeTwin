@@ -28,7 +28,7 @@ const faqs = [
   {
     question: 'Can I use CodeTwin with my existing projects?',
     answer:
-      'Yes — CodeTwin is language- and framework-agnostic. Run `CodeTwin config init` inside any project directory, set your preferred LLM provider and autonomy level, and start issuing tasks. The twin memory system learns your project\'s patterns, constraints, and past decisions over time.',
+      'Yes — CodeTwin is language- and framework-agnostic. In any project directory, run `codetwin providers login` once, then start with `codetwin` or `codetwin run "your task"`. The twin memory system learns your project\'s patterns, constraints, and past decisions over time.',
   },
   {
     question: 'How is twin memory stored and is it private?',
