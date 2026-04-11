@@ -51,6 +51,21 @@ type Inline = {
 }
 
 type PermissionReply = "once" | "always" | "reject"
+type UserDecisionType = "USER_APPROVE" | "USER_REJECT" | "USER_ANSWER"
+
+type UserDecisionInput = {
+  type: UserDecisionType
+  answer?: string
+}
+
+type QuestionDecision =
+  | {
+      type: "reply"
+      answers: string[][]
+    }
+  | {
+      type: "reject"
+    }
 
 function inline(info: Inline) {
   const suffix = info.description ? UI.Style.TEXT_DIM + ` ${info.description}` + UI.Style.TEXT_NORMAL : ""
@@ -238,6 +253,102 @@ function toPermissionQuestion(permission: string, patterns: string[]) {
   return `Allow ${permission}${scope}?`
 }
 
+function toQuestionPrompt(question: { header?: string; question?: string }) {
+  const header = typeof question.header === "string" ? question.header.trim() : ""
+  const text = typeof question.question === "string" ? question.question.trim() : ""
+  if (header && text) return `${header}: ${text}`
+  return text || header || "Question from agent"
+}
+
+function parseUserDecisionLine(line: string): { requestID: string; decision: UserDecisionInput } | undefined {
+  const trimmed = line.trim()
+  if (!trimmed) return
+
+  let parsed: any
+  try {
+    parsed = JSON.parse(trimmed)
+  } catch {
+    return
+  }
+
+  const type = typeof parsed?.type === "string" ? parsed.type : ""
+  if (type !== "USER_APPROVE" && type !== "USER_REJECT" && type !== "USER_ANSWER") {
+    return
+  }
+
+  const payload = parsed?.payload
+  if (!payload || typeof payload !== "object") return
+
+  const requestID =
+    typeof payload.awaitingResponseId === "string"
+      ? payload.awaitingResponseId
+      : typeof payload.requestID === "string"
+        ? payload.requestID
+        : undefined
+  if (!requestID) return
+
+  const answer = typeof payload.answer === "string" ? payload.answer : undefined
+  return {
+    requestID,
+    decision: {
+      type,
+      answer,
+    },
+  }
+}
+
+function parseQuestionAnswers(input: { answer?: string; questionCount: number; fallback?: string }) {
+  const count = Math.max(1, input.questionCount)
+  const result = Array.from({ length: count }, () => [] as string[])
+  const raw = input.answer?.trim()
+
+  if (!raw) {
+    if (input.fallback) result[0] = [input.fallback]
+    return result
+  }
+
+  if (count === 1) {
+    result[0] = raw
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean)
+    if (!result[0].length && input.fallback) result[0] = [input.fallback]
+    return result
+  }
+
+  try {
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed)) {
+      for (let index = 0; index < count; index += 1) {
+        const item = parsed[index]
+        if (Array.isArray(item)) {
+          result[index] = item.filter((entry): entry is string => typeof entry === "string" && !!entry.trim())
+          continue
+        }
+        if (typeof item === "string" && item.trim()) {
+          result[index] = [item.trim()]
+        }
+      }
+      return result
+    }
+  } catch {
+    // Fall through to plain-text parsing.
+  }
+
+  const segments = raw.split("|").map((segment) => segment.trim())
+  for (let index = 0; index < count; index += 1) {
+    const segment = segments[index]
+    if (!segment) continue
+    result[index] = segment
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean)
+  }
+
+  if (!result[0].length && input.fallback) result[0] = [input.fallback]
+  return result
+}
+
 export const RunCommand = cmd({
   command: "run [message..]",
   describe: "run codetwin with a message",
@@ -372,7 +483,13 @@ export const RunCommand = cmd({
       }
     }
 
-    if (!process.stdin.isTTY) message += "\n" + (await Bun.stdin.text())
+    const shouldReadPromptFromStdin = !process.stdin.isTTY && args.format !== "json"
+    if (shouldReadPromptFromStdin) {
+      const piped = await Bun.stdin.text()
+      if (piped.trim()) {
+        message += "\n" + piped
+      }
+    }
 
     if (message.trim().length === 0 && !args.command) {
       UI.error("You must provide a message or a command")
@@ -392,11 +509,6 @@ export const RunCommand = cmd({
 
     const rules: Permission.Ruleset = [
       ...Dependence.rules(level),
-      {
-        permission: "question",
-        action: "deny",
-        pattern: "*",
-      },
       {
         permission: "plan_enter",
         action: "deny",
@@ -448,52 +560,25 @@ export const RunCommand = cmd({
     async function execute(sdk: OpencodeClient) {
       const skip = args["dangerously-skip-permissions"] || level === 5
       let sessionID = ""
-      const permissionWaiters = new Map<string, (reply: PermissionReply) => void>()
+      const permissionWaiters = new Map<string, (decision: UserDecisionInput) => void>()
+      const questionWaiters = new Map<string, (decision: UserDecisionInput) => void>()
       let stdinBuffer = ""
 
-      function resolvePermissionFromInput(line: string) {
-        const trimmed = line.trim()
-        if (!trimmed) return
+      function resolveDecisionFromInput(line: string) {
+        const parsed = parseUserDecisionLine(line)
+        if (!parsed) return
 
-        let parsed: any
-        try {
-          parsed = JSON.parse(trimmed)
-        } catch {
+        const permissionWaiter = permissionWaiters.get(parsed.requestID)
+        if (permissionWaiter) {
+          permissionWaiters.delete(parsed.requestID)
+          permissionWaiter(parsed.decision)
           return
         }
 
-        const payload = parsed?.payload
-        if (!payload || typeof payload !== "object") return
-
-        const requestID =
-          typeof payload.awaitingResponseId === "string"
-            ? payload.awaitingResponseId
-            : typeof payload.requestID === "string"
-              ? payload.requestID
-              : undefined
-        if (!requestID) return
-
-        const waiter = permissionWaiters.get(requestID)
-        if (!waiter) return
-
-        const type = typeof parsed.type === "string" ? parsed.type : ""
-        if (type === "USER_APPROVE") {
-          waiter("once")
-          permissionWaiters.delete(requestID)
-          return
-        }
-
-        if (type === "USER_REJECT") {
-          waiter("reject")
-          permissionWaiters.delete(requestID)
-          return
-        }
-
-        if (type === "USER_ANSWER") {
-          const answer = (payload as Record<string, unknown>).answer
-          waiter(normalizePermissionReply(answer))
-          permissionWaiters.delete(requestID)
-        }
+        const questionWaiter = questionWaiters.get(parsed.requestID)
+        if (!questionWaiter) return
+        questionWaiters.delete(parsed.requestID)
+        questionWaiter(parsed.decision)
       }
 
       function waitForPermissionReply(requestID: string, timeoutMs: number) {
@@ -503,9 +588,49 @@ export const RunCommand = cmd({
             resolve("reject")
           }, timeoutMs)
 
-          permissionWaiters.set(requestID, (reply) => {
+          permissionWaiters.set(requestID, (decision) => {
             clearTimeout(timer)
-            resolve(reply)
+            if (decision.type === "USER_APPROVE") {
+              resolve("once")
+              return
+            }
+            if (decision.type === "USER_REJECT") {
+              resolve("reject")
+              return
+            }
+            resolve(normalizePermissionReply(decision.answer))
+          })
+        })
+      }
+
+      function waitForQuestionReply(input: {
+        requestID: string
+        timeoutMs: number
+        questionCount: number
+        fallbackOption?: string
+      }) {
+        return new Promise<QuestionDecision>((resolve) => {
+          const timer = setTimeout(() => {
+            questionWaiters.delete(input.requestID)
+            resolve({ type: "reject" })
+          }, input.timeoutMs)
+
+          questionWaiters.set(input.requestID, (decision) => {
+            clearTimeout(timer)
+            if (decision.type === "USER_REJECT") {
+              resolve({ type: "reject" })
+              return
+            }
+
+            const answers = parseQuestionAnswers({
+              answer: decision.type === "USER_ANSWER" ? decision.answer : undefined,
+              questionCount: input.questionCount,
+              fallback: input.fallbackOption,
+            })
+            resolve({
+              type: "reply",
+              answers,
+            })
           })
         })
       }
@@ -517,7 +642,7 @@ export const RunCommand = cmd({
           const lines = stdinBuffer.split(/\r?\n/)
           stdinBuffer = lines.pop() ?? ""
           for (const line of lines) {
-            resolvePermissionFromInput(line)
+            resolveDecisionFromInput(line)
           }
         })
       }
@@ -674,6 +799,7 @@ export const RunCommand = cmd({
                   question,
                   options,
                   timeoutMs,
+                  kind: "permission",
                   permission: permission.permission,
                   patterns: permission.patterns,
                 })
@@ -690,8 +816,79 @@ export const RunCommand = cmd({
               emit("approval_resolved", {
                 requestID: permission.id,
                 reply,
+                kind: "permission",
               })
             }
+          }
+
+          if (event.type === "question.asked") {
+            const request = event.properties
+            if (request.sessionID !== sessionID) continue
+
+            if (skip) {
+              await sdk.question.reject({
+                requestID: request.id,
+              })
+              emit("approval_resolved", {
+                requestID: request.id,
+                reply: "reject",
+                kind: "question",
+              })
+              continue
+            }
+
+            const first = request.questions[0]
+            const question = toQuestionPrompt({
+              header: first?.header,
+              question: first?.question,
+            })
+            const options =
+              first?.options
+                ?.map((item) => (typeof item.label === "string" ? item.label.trim() : ""))
+                .filter(Boolean) ?? []
+            const timeoutMs = 300000
+
+            if (
+              !emit("awaiting_approval", {
+                requestID: request.id,
+                question,
+                options,
+                timeoutMs,
+                kind: "question",
+              })
+            ) {
+              UI.println(UI.Style.TEXT_WARNING_BOLD + "!", UI.Style.TEXT_NORMAL + `question requested: ${question}`)
+            }
+
+            const decision = await waitForQuestionReply({
+              requestID: request.id,
+              timeoutMs,
+              questionCount: request.questions.length,
+              fallbackOption: options[0],
+            })
+
+            if (decision.type === "reject") {
+              await sdk.question.reject({
+                requestID: request.id,
+              })
+              emit("approval_resolved", {
+                requestID: request.id,
+                reply: "reject",
+                kind: "question",
+              })
+              continue
+            }
+
+            await sdk.question.reply({
+              requestID: request.id,
+              answers: decision.answers,
+            })
+
+            emit("approval_resolved", {
+              requestID: request.id,
+              reply: "answer",
+              kind: "question",
+            })
           }
         }
       }
