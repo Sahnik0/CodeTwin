@@ -86,124 +86,127 @@ class DashboardScreen extends ConsumerWidget {
                         child: CustomScrollView(
                           slivers: [
                             SliverPadding(
-                              padding: const EdgeInsets.only(top: 48), // Space for floating status bar
+                              padding: const EdgeInsets.only(
+                                  top: 48), // Space for floating status bar
                               sliver: SliverToBoxAdapter(
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   children: [
-                                // ── Preflight queue ──────────────────────────────
-                            if (session.preflightQueue.isNotEmpty)
-                              _FadeSlide(
-                                delay: const Duration(milliseconds: 60),
-                                child: _CliSection(
-                                  label: 'PREFLIGHT',
-                                  borderColor: cli.amber,
-                                  child: PreflightCard(
-                                    item: session.preflightQueue.first,
-                                    onApprove: (id) {
-                                      actions.approve(id);
-                                      ref
-                                          .read(sessionProvider.notifier)
-                                          .resolvePreflight(id);
-                                    },
-                                    onReject: (id) {
-                                      actions.reject(id);
-                                      ref
-                                          .read(sessionProvider.notifier)
-                                          .resolvePreflight(id);
-                                    },
-                                    onModify: (id, text) {
-                                      actions.answer(id, text);
-                                      ref
-                                          .read(sessionProvider.notifier)
-                                          .resolvePreflight(id);
-                                    },
-                                  ),
-                                ),
-                              ),
+                                    // ── Preflight queue ──────────────────────────────
+                                    if (session.preflightQueue.isNotEmpty)
+                                      _FadeSlide(
+                                        delay: const Duration(milliseconds: 60),
+                                        child: _CliSection(
+                                          label: 'PREFLIGHT',
+                                          borderColor: cli.amber,
+                                          child: PreflightCard(
+                                            item: session.preflightQueue.first,
+                                            onApprove: (id) {
+                                              actions.approve(id);
+                                              ref
+                                                  .read(sessionProvider.notifier)
+                                                  .resolvePreflight(id);
+                                            },
+                                            onReject: (id) {
+                                              actions.reject(id);
+                                              ref
+                                                  .read(sessionProvider.notifier)
+                                                  .resolvePreflight(id);
+                                            },
+                                            onModify: (id, text) {
+                                              actions.answer(id, text);
+                                              ref
+                                                  .read(sessionProvider.notifier)
+                                                  .resolvePreflight(id);
+                                            },
+                                          ),
+                                        ),
+                                      ),
 
-                            // ── Decision queue ───────────────────────────────
-                            if (session.decisionQueue.isNotEmpty)
-                              _FadeSlide(
-                                delay: const Duration(milliseconds: 60),
-                                child: _CliSection(
-                                  label: 'DECISION REQUIRED',
-                                  borderColor: cli.cyan,
-                                  child: DecisionCard(
-                                    item: session.decisionQueue.first,
-                                    onAnswer: (id, answer) {
-                                      actions.answer(id, answer);
-                                      ref
-                                          .read(sessionProvider.notifier)
-                                          .resolveDecision(id);
-                                    },
-                                    onReject: (id) {
-                                      actions.reject(id);
-                                      ref
-                                          .read(sessionProvider.notifier)
-                                          .resolveDecision(id);
-                                    },
-                                  ),
-                                ),
-                              ),
+                                    // ── Decision queue ───────────────────────────────
+                                    if (session.decisionQueue.isNotEmpty)
+                                      _FadeSlide(
+                                        delay: const Duration(milliseconds: 60),
+                                        child: _CliSection(
+                                          label: 'DECISION REQUIRED',
+                                          borderColor: cli.cyan,
+                                          child: DecisionCard(
+                                            item: session.decisionQueue.first,
+                                            onAnswer: (id, answer) {
+                                              actions.answer(id, answer);
+                                              ref
+                                                  .read(sessionProvider.notifier)
+                                                  .resolveDecision(id);
+                                            },
+                                            onReject: (id) {
+                                              actions.reject(id);
+                                              ref
+                                                  .read(sessionProvider.notifier)
+                                                  .resolveDecision(id);
+                                            },
+                                          ),
+                                        ),
+                                      ),
 
-                            // ── Last completed ───────────────────────────────
-                            if (session.lastComplete != null &&
-                                session.status == SessionStatus.idle)
-                              _FadeSlide(
-                                delay: const Duration(milliseconds: 80),
-                                child: _TerminalResultCard(
-                                  isSuccess: true,
-                                  title: 'TASK COMPLETED',
-                                  body: session.lastComplete!.summary,
-                                  meta:
-                                      '${session.lastComplete!.filesChanged.length} files changed'
-                                      '  ·  ${formatDurationMs(session.lastComplete!.durationMs)}',
-                                ),
-                              ),
+                                    // ── Last completed ───────────────────────────────
+                                    if (session.lastComplete != null &&
+                                        session.status == SessionStatus.idle)
+                                      _FadeSlide(
+                                        delay: const Duration(milliseconds: 80),
+                                        child: _TerminalResultCard(
+                                          isSuccess: true,
+                                          title: 'TASK COMPLETED',
+                                          body: session.lastComplete!.summary,
+                                          meta:
+                                              '${session.lastComplete!.filesChanged.length} files changed'
+                                              '  ·  ${formatDurationMs(session.lastComplete!.durationMs)}',
+                                        ),
+                                      ),
 
-                            // ── Last failed ──────────────────────────────────
-                            if (session.lastFailed != null &&
-                                session.status == SessionStatus.failed)
-                              _FadeSlide(
-                                delay: const Duration(milliseconds: 80),
-                                child: _TerminalResultCard(
-                                  isSuccess: false,
-                                  title: 'TASK FAILED',
-                                  body: session.lastFailed!.error,
+                                    // ── Last failed ──────────────────────────────────
+                                    if (session.lastFailed != null &&
+                                        session.status == SessionStatus.failed)
+                                      _FadeSlide(
+                                        delay: const Duration(milliseconds: 80),
+                                        child: _TerminalResultCard(
+                                          isSuccess: false,
+                                          title: 'TASK FAILED',
+                                          body: session.lastFailed!.error,
+                                        ),
+                                      ),
+                                  ],
                                 ),
-                              ),
-                          ],
-                        ),
                               ),
                             ),
 
-                      // ── Chat log fills remaining space ───────────────────
-                      if (session.logs.any((l) => l.level != AgentLogLevel.error) &&
-                          session.preflightQueue.isEmpty &&
-                          session.decisionQueue.isEmpty)
-                        SliverFillRemaining(
-                          hasScrollBody: true,
-                          child: ChatMessageList(
-                            logs: session.logs
-                                .where((l) => l.level != AgentLogLevel.error)
-                                .toList(),
-                          ),
-                        ),
+                            // ── Chat log fills remaining space ───────────────────
+                            if (session.logs
+                                    .any((l) => l.level != AgentLogLevel.error) &&
+                                session.preflightQueue.isEmpty &&
+                                session.decisionQueue.isEmpty)
+                              SliverFillRemaining(
+                                hasScrollBody: true,
+                                child: ChatMessageList(
+                                  logs: session.logs
+                                      .where((l) => l.level != AgentLogLevel.error)
+                                      .toList(),
+                                ),
+                              ),
 
-                      // Bottom padding so chat doesn't touch the start of the bar
-                      const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
+                            // Bottom padding so chat doesn't touch the start of the bar
+                            const SliverPadding(
+                              padding: EdgeInsets.only(bottom: 24),
+                            ),
                           ],
                         ),
                       ),
                     ),
 
-                // ── Solid bottom input area ──────────────────────────────────
-                // Matches the style of the bottom navigation bar
-                _BottomBar(session: session, actions: actions, ref: ref),
-
-                    ],
-                  ),
+                    // ── Solid bottom input area ──────────────────────────────────
+                    // Matches the style of the bottom navigation bar
+                    _BottomBar(session: session, actions: actions, ref: ref),
+                  ],
                 ),
 
                 // ── Floating Status Hub ──────────────────────────────────────
@@ -220,7 +223,12 @@ class DashboardScreen extends ConsumerWidget {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Expanded(child: Align(alignment: Alignment.centerLeft, child: _FloatingStatusBar(session: session))),
+                            Expanded(
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: _FloatingStatusBar(session: session),
+                              ),
+                            ),
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
