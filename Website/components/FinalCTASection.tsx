@@ -13,8 +13,8 @@ export default function FinalCTASection() {
   const letterSpacing = useTransform(scrollYProgress, [0, 1], ["-0.08em", "-0.02em"]);
 
   return (
-    <section ref={containerRef} className="relative py-24 px-6 overflow-hidden bg-background">
-      <div className="relative z-10 max-w-5xl mx-auto">
+    <section ref={containerRef} className="relative py-14 px-6 overflow-hidden bg-background">
+      <div className="relative z-10 max-w-4xl mx-auto">
         <BorderGlow
           edgeSensitivity={40}
           glowColor="240 60 70"
@@ -25,18 +25,18 @@ export default function FinalCTASection() {
           coneSpread={30}
           animated={true}
           colors={['#a6a6ed', '#ffffff', '#2dd4bf']}
-          className="w-full flex flex-col items-center justify-center py-24 px-6 text-center"
+          className="w-full flex flex-col items-center justify-center py-14 px-5 text-center"
         >
           {/* Headline */}
           <motion.h2 
             style={{ opacity: textOpacity, scale: textScale, letterSpacing: letterSpacing }}
-            className="text-4xl md:text-5xl lg:text-6xl font-semibold text-text-primary leading-[1.06] mb-5 origin-center z-10 relative"
+            className="text-3xl md:text-4xl lg:text-5xl font-semibold text-text-primary leading-[1.08] mb-4 origin-center z-10 relative"
           >
             Ready to Take Control?
           </motion.h2>
 
           {/* Sub copy */}
-          <p className="text-base text-text-secondary mb-10 max-w-md mx-auto leading-relaxed z-10 relative">
+          <p className="text-sm md:text-base text-text-secondary mb-7 max-w-md mx-auto leading-relaxed z-10 relative">
             No cloud. No vendor lock-in. Just you, your terminal, and an AI agent that listens.
           </p>
 

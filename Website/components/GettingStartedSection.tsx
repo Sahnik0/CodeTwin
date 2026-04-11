@@ -10,22 +10,22 @@ const steps = [
     num: '01',
     icon: <Download size={14} />,
     title: 'Install CodeTwin',
-    description: 'Linux/macOS one-liner here, with a Windows PowerShell one-liner in docs.',
+    description: 'Copy this command, run it, then open a new terminal window.',
     code: 'curl -fsSL https://code-twin.vercel.app/install.sh | bash',
   },
   {
     num: '02',
     icon: <Settings size={14} />,
     title: 'Authenticate Provider',
-    description: 'Log in to your preferred LLM provider and verify credentials.',
-    code: 'codetwin providers login && codetwin providers list',
+    description: 'Run login, pick your provider, and paste your API key when asked.',
+    code: 'codetwin providers login',
   },
   {
     num: '03',
     icon: <Play size={14} />,
-    title: 'Start Coding with Your Agent',
-    description: 'Open the TUI in your project and issue tasks in natural language.',
-    code: 'cd your-project && codetwin',
+    title: 'Start CodeTwin in Your Project',
+    description: 'Go to your project folder, run this command, then type your task in plain English.',
+    code: 'codetwin',
   },
 ]
 
@@ -129,7 +129,7 @@ export default function GettingStartedSection() {
             Up and Running in 60 Seconds
           </h2>
           <p className="text-sm text-text-secondary leading-relaxed max-w-lg">
-            Three commands to your first agent-driven task. No browser tab, no Electron app — just your terminal.
+            Follow these three simple steps in order. Copy, paste, run.
           </p>
         </motion.div>
 

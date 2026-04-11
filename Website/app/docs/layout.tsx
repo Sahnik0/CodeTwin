@@ -6,45 +6,31 @@ const navItems = [
     group: 'Getting started',
     items: [
       { label: 'Installation', slug: 'getting-started' },
-      { label: 'Init wizard', slug: 'getting-started#init-wizard' },
-      { label: 'First task', slug: 'getting-started#first-task' },
     ],
   },
   {
     group: 'Core concepts',
     items: [
       { label: 'Dependence levels', slug: 'dependence-levels' },
-      { label: 'Pre-flight maps', slug: 'twin-memory#pre-flight' },
       { label: 'Twin memory', slug: 'twin-memory' },
     ],
   },
   {
     group: 'Providers',
     items: [
-      { label: 'OpenAI', slug: 'providers#openai' },
-      { label: 'Anthropic', slug: 'providers#anthropic' },
-      { label: 'Groq', slug: 'providers#groq' },
-      { label: 'Google Gemini', slug: 'providers#gemini' },
-      { label: 'Ollama (local)', slug: 'providers#ollama' },
-      { label: 'Azure', slug: 'providers#azure' },
-      { label: 'All others', slug: 'providers#others' },
+      { label: 'Setup & API Keys', slug: 'providers' },
     ],
   },
   {
     group: 'Tools',
     items: [
       { label: 'Overview', slug: 'tools' },
-      { label: 'read / write / edit', slug: 'tools#read-write-edit' },
-      { label: 'bash', slug: 'tools#bash' },
-      { label: 'git', slug: 'tools#git' },
     ],
   },
   {
     group: 'Remote control',
     items: [
       { label: 'Setup', slug: 'remote-control' },
-      { label: 'Mobile pairing', slug: 'remote-control#pairing' },
-      { label: 'Relay server', slug: 'remote-control#relay' },
     ],
   },
   {
@@ -59,24 +45,24 @@ interface DocsLayoutProps {
 
 export default function DocsLayout({ children }: DocsLayoutProps) {
   return (
-    <div className="min-h-screen pt-14">
-      <div className="max-w-7xl mx-auto flex">
+    <div className="min-h-screen pt-[4.5rem]">
+      <div className="max-w-7xl mx-auto flex items-start">
         {/* Sidebar */}
         <nav
-          className="hidden lg:block w-60 flex-shrink-0 border-r border-border-default top-14 self-start sticky h-[calc(100vh-3.5rem)] overflow-y-auto py-8 px-4"
+          className="hidden lg:block w-72 flex-shrink-0 sticky top-[4.5rem] py-10 pr-6"
           aria-label="Documentation navigation"
         >
           {navItems.map((section) => (
-            <div key={section.group} className="mb-6">
-              <p className="text-xs text-text-muted uppercase tracking-widest font-mono mb-2 px-2">
+            <div key={section.group} className="mb-8">
+              <p className="text-[12px] text-text-primary font-bold tracking-tight mb-3">
                 {section.group}
               </p>
-              <ul className="flex flex-col gap-0.5">
+              <ul className="flex flex-col border-l border-border-default ml-1">
                 {section.items.map((item) => (
                   <li key={item.slug}>
                     <Link
                       href={`/docs/${item.slug}`}
-                      className="block px-2 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-surface rounded transition-colors"
+                      className="block pl-4 py-1.5 text-[14px] font-medium text-text-muted hover:text-text-primary transition-colors border-l-2 border-transparent hover:border-[#a6a6ed] -ml-px"
                     >
                       {item.label}
                     </Link>
@@ -88,16 +74,16 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
         </nav>
 
         {/* Content */}
-        <article className="flex-1 min-w-0 px-6 lg:px-12 py-12 prose-sm max-w-3xl">
+        <article className="flex-1 min-w-0 px-6 lg:px-16 py-12 prose-sm max-w-[850px] border-l border-border-default min-h-[calc(100vh-4.5rem)]">
           {children}
 
           {/* Edit on GitHub footer */}
-          <div className="mt-16 pt-8 border-t border-border-default">
+          <div className="mt-20 pt-10 border-t border-border-default">
             <a
-              href="https://github.com/CodeTwin/CodeTwin/tree/main/docs"
+              href="https://github.com/Sahnik0/CodeTwin/tree/main/content/docs"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-text-muted hover:text-text-secondary transition-colors"
+              className="text-sm font-medium text-[#a6a6ed]/80 hover:text-[#a6a6ed] transition-colors"
             >
               Edit this page on GitHub →
             </a>
