@@ -1,6 +1,7 @@
 /// Modern multi-line task text input mimicking an AI chat bar.
 
 import 'package:flutter/material.dart';
+import '../theme/cli_theme.dart';
 
 class TaskInput extends StatefulWidget {
   final void Function(String task) onSubmit;
@@ -46,7 +47,8 @@ class _TaskInputState extends State<TaskInput> {
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = Color(0xFF20B2AA);
+    final cli = CliTheme.of(context);
+    final primaryColor = cli.accent;
     final isFocused = _focusNode.hasFocus;
 
     return AnimatedContainer(

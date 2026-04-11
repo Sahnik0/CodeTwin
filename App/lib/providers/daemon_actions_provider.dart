@@ -116,8 +116,10 @@ class DaemonActions {
         {'awaitingResponseId': awaitingResponseId, 'answer': answer},
       );
 
-  void changeLevel(int newLevel) =>
-      _send(MessageType.levelChange, {'newLevel': newLevel});
+  void changeLevel(int newLevel) {
+    if (session.status == SessionStatus.idle || session.status == SessionStatus.failed) return;
+    _send(MessageType.levelChange, {'newLevel': newLevel});
+  }
 
   void ping() => _send(MessageType.ping, {});
 }

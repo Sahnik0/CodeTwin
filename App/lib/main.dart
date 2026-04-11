@@ -15,6 +15,7 @@ import 'services/notifications_service.dart';
 import 'services/socket_service.dart';
 import 'services/token_store.dart';
 import 'providers/onboarding_provider.dart';
+import 'widgets/restart_widget.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,11 +48,13 @@ Future<void> main() async {
   }
 
   runApp(
-    ProviderScope(
-      overrides: [
-        sharedPreferencesProvider.overrideWithValue(sharedPrefs),
-      ],
-      child: App(startupCreds: creds),
+    RestartWidget(
+      child: ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(sharedPrefs),
+        ],
+        child: App(startupCreds: creds),
+      ),
     ),
   );
 

@@ -163,11 +163,11 @@ class _ChatBubble extends StatelessWidget {
     // Determine bubble styling
     Color bgColor = isUser 
       ? cli.accentDim
-      : cli.surface;
+      : Colors.grey.shade900;
     
     Color textColor = isUser
       ? Colors.white
-      : cli.text;
+      : Colors.white;
 
     if (entry.level == AgentLogLevel.error) {
       bgColor = cli.redMuted;
@@ -189,7 +189,7 @@ class _ChatBubble extends StatelessWidget {
         decoration: BoxDecoration(
           color: bgColor,
           border: isUser ? null : Border.all(
-            color: cli.border,
+            color: Colors.grey.shade700,
             width: 1,
           ),
           borderRadius: BorderRadius.only(

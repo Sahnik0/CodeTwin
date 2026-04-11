@@ -49,20 +49,24 @@ class _DaemonStatusBarState extends ConsumerState<DaemonStatusBar>
       }
     }
 
-    final Color color;
+    final Color bg;
+    final Color fg;
     final IconData icon;
 
     switch (conn.pairingStatus) {
       case PairingStatus.paired:
-        color = Colors.greenAccent;
+        bg = Colors.green.shade900;
+        fg = Colors.green.shade200;
         icon = Icons.wifi;
         break;
       case PairingStatus.connecting:
-        color = Colors.blueAccent;
+        bg = Colors.blue.shade900;
+        fg = Colors.blue.shade200;
         icon = Icons.autorenew;
         break;
       default:
-        color = Colors.grey;
+        bg = Colors.grey.shade900;
+        fg = Colors.grey.shade200;
         icon = Icons.wifi_off;
         break;
     }
@@ -82,24 +86,17 @@ class _DaemonStatusBarState extends ConsumerState<DaemonStatusBar>
       },
       child: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color?.withValues(alpha: 0.9),
+          color: bg,
           shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
-              blurRadius: 10,
-              spreadRadius: 1,
-            )
-          ],
           border: Border.all(
-            color: color.withValues(alpha: 0.5),
-            width: 1.5,
+            color: fg.withValues(alpha: 0.8),
+            width: 1.2,
           ),
         ),
         padding: const EdgeInsets.all(8),
         child: RotationTransition(
           turns: isConnecting ? _spinController : const AlwaysStoppedAnimation(0),
-          child: Icon(icon, color: color, size: 18),
+          child: Icon(icon, color: fg, size: 18),
         ),
       ),
     );
