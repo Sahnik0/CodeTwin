@@ -39,14 +39,9 @@ interface GitHubContributor {
   contributions: number
 }
 
-interface GitHubContributorStats {
-  total: number
-  author: {
-    id: number
-    login: string
-    avatar_url: string
-    html_url: string
-  } | null
+interface ContributorsApiResponse {
+  contributors: GitHubContributor[]
+  source: 'stats' | 'contributors' | 'fallback'
 }
 
 const easeOut = [0.16, 1, 0.3, 1] as const
@@ -78,32 +73,14 @@ export default function GettingStartedSection() {
 
     const fetchContributors = async () => {
       try {
-        const response = await fetch(
-          `https://api.github.com/repos/Sahnik0/CodeTwin/stats/contributors?t=${Date.now()}`,
-          { cache: 'no-store' }
-        )
-
-        if (response.status === 202) {
-          return
-        }
+        const response = await fetch(`/api/contributors?t=${Date.now()}`, { cache: 'no-store' })
 
         if (!response.ok) {
           return
         }
 
-        const data: GitHubContributorStats[] = await response.json()
-
-        const topContributors = data
-          .filter((entry): entry is GitHubContributorStats & { author: NonNullable<GitHubContributorStats['author']> } => Boolean(entry.author))
-          .map((entry) => ({
-            id: entry.author.id,
-            login: entry.author.login,
-            avatar_url: entry.author.avatar_url,
-            html_url: entry.author.html_url,
-            contributions: entry.total,
-          }))
-          .sort((a, b) => b.contributions - a.contributions)
-          .slice(0, 5)
+        const data = (await response.json()) as ContributorsApiResponse
+        const topContributors = Array.isArray(data?.contributors) ? data.contributors : []
 
         if (isMounted && topContributors.length > 0) {
           setContributors(topContributors)
@@ -258,7 +235,9 @@ export default function GettingStartedSection() {
                       <p className="text-sm font-medium text-text-primary group-hover:text-[#a6a6ed] transition-colors">
                         {person.login}
                       </p>
-                      <p className="text-xs text-text-muted">{person.contributions} contributions</p>
+                      <p className="text-xs text-text-muted">
+                        {person.contributions} contribution{person.contributions === 1 ? '' : 's'}
+                      </p>
                     </div>
                   </a>
                 ))}
