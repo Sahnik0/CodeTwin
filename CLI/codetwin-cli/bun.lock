@@ -224,9 +224,7 @@
   },
   "trustedDependencies": [
     "esbuild",
-    "tree-sitter-powershell",
     "web-tree-sitter",
-    "tree-sitter-bash",
   ],
   "patchedDependencies": {
     "solid-js@1.9.10": "patches/solid-js@1.9.10.patch",
