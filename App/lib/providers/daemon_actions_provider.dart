@@ -83,6 +83,11 @@ class DaemonActions {
       ],
       'env': {'CODETWIN_DEPENDENCE_LEVEL': session.dependenceLevel.toString()},
     });
+    
+    // Immediately display 'running' rather than waiting for stdout, improving perceived latency.
+    ref.read(sessionProvider.notifier).setStatus(SessionStatus.running);
+    ref.read(sessionProvider.notifier).setCurrentTask('Initializing agent...');
+    
     debugPrint('[DaemonActions] cliExecute sent ✓');
   }
 

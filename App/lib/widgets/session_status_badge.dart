@@ -5,8 +5,9 @@ import '../models/session_status.dart';
 
 class SessionStatusBadge extends StatelessWidget {
   final SessionStatus status;
+  final String? currentTask;
 
-  const SessionStatusBadge({super.key, required this.status});
+  const SessionStatusBadge({super.key, required this.status, this.currentTask});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +21,7 @@ class SessionStatusBadge extends StatelessWidget {
       SessionStatus.running => (
           Colors.blue.shade900,
           Colors.blue.shade200,
-          'Running',
+          currentTask?.isNotEmpty == true ? currentTask! : 'Running',
           Icons.play_circle_outline,
         ),
       SessionStatus.awaitingApproval => (

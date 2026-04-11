@@ -76,16 +76,17 @@ class DashboardScreen extends ConsumerWidget {
               children: [
                 // ── Scrollable Area ──────────────────────────────────────
                 Expanded(
-                  child: CustomScrollView(
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // Space for floating status bar
-                            const SizedBox(height: 38),
-
-                            // ── Preflight queue ──────────────────────────────
+                  child: SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 48), // Space for floating status bar
+                      child: CustomScrollView(
+                        slivers: [
+                          SliverToBoxAdapter(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                // ── Preflight queue ──────────────────────────────
                             if (session.preflightQueue.isNotEmpty)
                               _FadeSlide(
                                 delay: const Duration(milliseconds: 60),
@@ -187,6 +188,8 @@ class DashboardScreen extends ConsumerWidget {
                       // Bottom padding so chat doesn't touch the start of the bar
                       const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
                     ],
+                  ),
+                    ),
                   ),
                 ),
 

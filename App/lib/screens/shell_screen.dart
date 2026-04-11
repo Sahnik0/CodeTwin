@@ -184,28 +184,10 @@ class _FloatingStatusBar extends ConsumerWidget {
     return Row(
       children: [
         // Status Badge
-        SessionStatusBadge(status: session.status),
+        SessionStatusBadge(status: session.status, currentTask: session.currentTask),
         const Spacer(),
         if (isRunning) ...[
           _BlinkingCursor(color: cli.accent),
-          const SizedBox(width: 8),
-          TextButton.icon(
-            onPressed: () => actions.cancelTask(),
-            icon: Text('[', style: cli.mono.copyWith(color: cli.red)),
-            label: Text(
-              'SIGINT',
-              style: cli.mono.copyWith(
-                  color: cli.red, fontSize: 11, fontWeight: FontWeight.bold),
-            ),
-            style: TextButton.styleFrom(
-              foregroundColor: cli.red,
-              backgroundColor: cli.bg.withValues(alpha: 0.8), // Glass effect
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              side: BorderSide(color: cli.red, width: 1),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(3)),
-            ),
-          ),
         ],
       ],
     );

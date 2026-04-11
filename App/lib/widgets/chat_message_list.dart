@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/log_entry.dart';
 import '../models/session_status.dart';
 import '../utils/formatters.dart';
+import '../theme/cli_theme.dart';
 
 class ChatMessageList extends StatefulWidget {
   final List<LogEntry> logs;
@@ -149,8 +150,7 @@ class _ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final cli = CliTheme.of(context);
     
     // Extract actual message if it's a user command
     String displayMessage = entry.message;
@@ -162,16 +162,16 @@ class _ChatBubble extends StatelessWidget {
 
     // Determine bubble styling
     Color bgColor = isUser 
-      ? colorScheme.primaryContainer
-      : colorScheme.surfaceContainerHighest;
+      ? cli.accentDim
+      : cli.surface;
     
     Color textColor = isUser
-      ? colorScheme.onPrimaryContainer
-      : colorScheme.onSurface;
+      ? Colors.white
+      : cli.text;
 
     if (entry.level == AgentLogLevel.error) {
-      bgColor = colorScheme.errorContainer;
-      textColor = colorScheme.onErrorContainer;
+      bgColor = cli.redMuted;
+      textColor = cli.red;
     }
 
     IconData? leftIcon;
@@ -188,6 +188,10 @@ class _ChatBubble extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: bgColor,
+          border: isUser ? null : Border.all(
+            color: cli.border,
+            width: 1,
+          ),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),

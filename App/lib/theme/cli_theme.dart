@@ -31,35 +31,63 @@ class CliTheme extends InheritedWidget {
         _ => const Color(0xFF1A0D0D),
       };
   Color get accent => switch (level) {
-        1 => const Color(0xFF00FF41),
-        2 => const Color(0xFF00E5FF),
-        3 => const Color(0xFF2979FF),
-        4 => const Color(0xFFFF9100),
-        _ => const Color(0xFFFF3131),
+        1 => Colors.green.shade500,
+        2 => Colors.teal.shade400,
+        3 => Colors.blue.shade400,
+        4 => Colors.orange.shade500,
+        _ => Colors.red.shade500,
       };
   Color get accentDim => switch (level) {
-        1 => const Color(0xFF00C132),
-        2 => const Color(0xFF00B8D4),
-        3 => const Color(0xFF2962FF),
-        4 => const Color(0xFFFF6D00),
-        _ => const Color(0xFFD50000),
+        1 => Colors.green.shade700,
+        2 => Colors.teal.shade600,
+        3 => Colors.blue.shade600,
+        4 => Colors.orange.shade700,
+        _ => Colors.red.shade700,
       };
   Color get accentMuted => switch (level) {
         1 => const Color(0xFF1A3D1A),
-        2 => const Color(0xFF1A3D3D),
+        2 => const Color(0xFF133D3D), // Teal hue
         3 => const Color(0xFF1A2B3D),
         4 => const Color(0xFF3D2B1A),
         _ => const Color(0xFF3D1A1A),
       };
 
-  final Color cyan = const Color(0xFF00E5FF);
-  final Color amber = const Color(0xFFFFB300);
-  final Color red = const Color(0xFFFF3131);
+  Color get cyan => Colors.teal.shade400;
+  Color get amber => Colors.orange.shade500;
+  Color get red => Colors.red.shade500;
   final Color redMuted = const Color(0xFF3D0A0A);
-  final Color text = const Color(0xFFCCFFCC);
-  final Color textDim = const Color(0xFF557755);
-  final Color border = const Color(0xFF1F3D1F);
-  final Color borderBright = const Color(0xFF00FF41);
+  Color get text => switch (level) {
+        1 => const Color(0xFFCCFFCC), // Green tint
+        2 => const Color(0xFFCCFFFF), // Cyan tint
+        3 => const Color(0xFFCCCCFF), // Blue tint
+        4 => const Color(0xFFFFE5CC), // Orange tint
+        _ => const Color(0xFFFFCCCC), // Red tint (Level 5)
+      };
+
+  Color get textDim => switch (level) {
+        1 => const Color(0xFF557755),
+        2 => const Color(0xFF557777),
+        3 => const Color(0xFF555577),
+        4 => const Color(0xFF776655),
+        _ => const Color(0xFF775555),
+      };
+
+  Color get border => switch (level) {
+        1 => const Color(0xFF1F3D1F),
+        2 => const Color(0xFF1F3D3D),
+        3 => const Color(0xFF1F1F3D),
+        4 => const Color(0xFF3D2E1F),
+        _ => const Color(0xFF3D1F1F),
+      };
+
+  Color get borderBright => switch (level) {
+        1 => Colors.green.shade500,
+        2 => Colors.teal.shade400,
+        3 => Colors.blue.shade400,
+        4 => Colors.orange.shade500,
+        _ => Colors.red.shade500,
+      };
+
   final TextStyle mono = const TextStyle(fontFamily: 'monospace');
 
   BoxDecoration box({Color? borderColor, Color? bgColor, double radius = 4}) =>
