@@ -1,4 +1,17 @@
-# CodeTwin
+<div align="center">
+  <pre>
+ +------------------------------------------------------------------+
+ |           ______          __        _______       _              |
+ |          / ____/___  ____/ /__     /_  __(_)_  __(_)___          |
+ |         / /   / __ \/ __  / _ \     / / / / / / / / __ \         |
+ |        / /___/ /_/ / /_/ /  __/    / / / / /_/ / / / / /         |
+ |        \____/\____/\__,_/\___/    /_/ /_/\__,_/_/_/ /_/          |
+ +------------------------------------------------------------------+
+ |            TERMINAL-FIRST AI CODING AGENT + MOBILE               |
+ +------------------------------------------------------------------+
+  </pre>
+  <p><strong>CodeTwin</strong> | <strong>Run local. Control anywhere.</strong></p>
+</div>
 
 CodeTwin is a terminal-first AI coding agent.
 
@@ -85,7 +98,7 @@ codetwin models
 
 Supported provider set includes OpenAI, Anthropic, Groq, Gemini, Mistral, Ollama, Azure, and others via the provider system.
 
-### 4) Mobile Connection (Core USP)
+### 4) Mobile Connection
 
 Mobile connection is a core part of the CodeTwin idea, not an afterthought.
 
@@ -98,7 +111,7 @@ This design keeps execution and credentials on your own machine while giving you
 
 Mobile app download link:
 
-- Drive link (to be added by maintainer): PENDING
+- Google Drive: https://drive.google.com/drive/folders/12f3pnUAb6GOitnHyF_JeRF02tre8YJ8N?usp=sharing
 
 Remote pairing flow:
 
@@ -121,8 +134,9 @@ codetwin worker
 
 QR flow (faster pairing):
 
-- Open https://code-twin.vercel.app/connect on the laptop running CodeTwin.
-- Scan the QR code from your phone and confirm pairing.
+- Open the mobile app Pair screen and tap Scan QR.
+- Scan the pairing QR shown by your CLI environment.
+- If QR is not available, use the 12-character code flow above.
 
 ### 5) Choose Dependence Level (1-5)
 

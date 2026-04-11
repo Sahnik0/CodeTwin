@@ -55,12 +55,14 @@ export default function NavBar() {
           >
             Changelog
           </Link>
-          <Link
-            href="/connect"
+          <a
+            href="https://drive.google.com/drive/folders/12f3pnUAb6GOitnHyF_JeRF02tre8YJ8N?usp=sharing"
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-text-secondary hover:text-text-primary transition-colors"
           >
-            Connect
-          </Link>
+            Download App
+          </a>
           <a
             href="https://github.com/Sahnik0/CodeTwin"
             target="_blank"
@@ -110,13 +112,15 @@ export default function NavBar() {
           >
             Changelog
           </Link>
-          <Link
-            href="/connect"
+          <a
+            href="https://drive.google.com/drive/folders/12f3pnUAb6GOitnHyF_JeRF02tre8YJ8N?usp=sharing"
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-text-secondary hover:text-text-primary transition-colors"
             onClick={() => setOpen(false)}
           >
-            Connect
-          </Link>
+            Download App
+          </a>
           <a
             href="https://github.com/Sahnik0/CodeTwin"
             target="_blank"

@@ -1,8 +1,8 @@
 import Link from 'next/link'
-import { Bug, Mail, Users } from 'lucide-react'
+import { Bug, Download, Users } from 'lucide-react'
 import GitHubIcon from './GitHubIcon'
 
-type SocialIcon = 'github' | 'bug' | 'users' | 'mail'
+type SocialIcon = 'github' | 'bug' | 'users' | 'download'
 
 type SocialLink = {
   label: string
@@ -31,10 +31,10 @@ const socialLinks: SocialLink[] = [
     external: true,
   },
   {
-    label: 'Connect',
-    href: '/connect',
-    icon: 'mail',
-    external: false,
+    label: 'Download App',
+    href: 'https://drive.google.com/drive/folders/12f3pnUAb6GOitnHyF_JeRF02tre8YJ8N?usp=sharing',
+    icon: 'download',
+    external: true,
   },
 ]
 
@@ -51,7 +51,7 @@ function SocialLinkIcon({ icon }: { icon: SocialIcon }) {
     return <Users size={21} strokeWidth={1.75} />
   }
 
-  return <Mail size={21} strokeWidth={1.75} />
+  return <Download size={21} strokeWidth={1.75} />
 }
 
 export default function Footer() {
