@@ -5,11 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/session_provider.dart';
 import '../models/session_status.dart';
 import '../providers/daemon_actions_provider.dart';
-import '../widgets/session_status_badge.dart';
-import '../widgets/daemon_status_bar.dart';
 import '../theme/cli_theme.dart';
 import '../services/bridge_listener_service.dart';
-import '../widgets/restart_widget.dart';
 
 class SwipeableShellContainer extends StatefulWidget {
   final StatefulNavigationShell navigationShell;
@@ -90,62 +87,9 @@ class ShellScreen extends ConsumerWidget {
           final cli = CliTheme.of(context);
           return Scaffold(
             backgroundColor: cli.bg,
-            body: Stack(
-              children: [
-                // 1. Main Content: Ignore the top safe area (bleed into status bar)
-                Positioned.fill(child: shell),
-
-                // 2. Floating Overlays: Respect the safe area (top status hub)
-                SafeArea(
-                  child: Stack(
-                    children: [
-                      // Floating Status Bar (Dashboard only)
-                      if (shell.currentIndex == 0 && session != null)
-                        Positioned(
-                          top: 4,
-                          left: 16,
-                          right: 64,
-                          height: 32,
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: _FloatingStatusBar(session: session),
-                          ),
-                        ),
-
-                      if (shell.currentIndex == 0)
-                        Positioned(
-                          top: 4,
-                          right: 16,
-                          height: 32,
-                          child: Align(
-                          alignment: Alignment.centerRight,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Transform.scale(
-                                scale: 0.75,
-                                child: IconButton(
-                                  padding: EdgeInsets.zero,
-                                  onPressed: () {
-                                    RestartWidget.restartApp(context);
-                                  },
-                                  icon: Icon(Icons.refresh, color: cli.textDim),
-                                  tooltip: 'Restart App',
-                                ),
-                              ),
-                              Transform.scale(
-                                scale: 0.75,
-                                child: const DaemonStatusBar(),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+            // 1. Main Content: Ignore the top safe area (bleed into status bar)
+            // Floating overlays have been moved strictly inside Dashboard Screen to fix swipe overlap
+            body: SizedBox.expand(child: shell),
             bottomNavigationBar: RepaintBoundary(
               child: Container(
                 decoration: BoxDecoration(
@@ -196,66 +140,6 @@ class ShellScreen extends ConsumerWidget {
 
   void _onTap(BuildContext context, int index) {
     shell.goBranch(index, initialLocation: index == shell.currentIndex);
-  }
-}
-
-// ── Floating Status Bar ──────────────────────────────────────────────────────
-class _FloatingStatusBar extends ConsumerWidget {
-  final SessionState session;
-  const _FloatingStatusBar({required this.session});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final cli = CliTheme.of(context);
-    final isRunning = session.status == SessionStatus.running;
-    final actions = ref.read(daemonActionsProvider);
-
-    return Row(
-      children: [
-        // Status Badge
-        SessionStatusBadge(status: session.status, currentTask: session.currentTask),
-        const Spacer(),
-      ],
-    );
-  }
-}
-
-class _BlinkingCursor extends StatefulWidget {
-  final Color? color;
-  const _BlinkingCursor({super.key, this.color});
-
-  @override
-  State<_BlinkingCursor> createState() => _BlinkingCursorState();
-}
-
-class _BlinkingCursorState extends State<_BlinkingCursor> {
-  bool _visible = true;
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(milliseconds: 530), (_) {
-      if (mounted) setState(() => _visible = !_visible);
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final cli = CliTheme.of(context);
-    return AnimatedOpacity(
-      opacity: _visible ? 1 : 0,
-      duration: const Duration(milliseconds: 80),
-      child: Text('█',
-          style: cli.mono.copyWith(
-              color: widget.color ?? cli.accent, fontSize: 14)),
-    );
   }
 }
 

@@ -11,6 +11,9 @@ import '../widgets/decision_card.dart';
 import '../widgets/task_input.dart';
 import '../widgets/chat_message_list.dart';
 import '../utils/formatters.dart';
+import '../widgets/restart_widget.dart';
+import '../widgets/daemon_status_bar.dart';
+import '../widgets/session_status_badge.dart';
 import '../theme/cli_theme.dart';
 
 // ── Fade-slide-in wrapper ─────────────────────────────────────────────────────
@@ -72,20 +75,22 @@ class DashboardScreen extends ConsumerWidget {
           final cli = CliTheme.of(context);
           return Container(
             color: cli.bg,
-            child: Column(
+            child: Stack(
               children: [
-                // ── Scrollable Area ──────────────────────────────────────
-                Expanded(
-                  child: SafeArea(
-                    bottom: false,
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 48), // Space for floating status bar
-                      child: CustomScrollView(
-                        slivers: [
-                          SliverToBoxAdapter(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
+                Column(
+                  children: [
+                    // ── Scrollable Area ──────────────────────────────────────
+                    Expanded(
+                      child: SafeArea(
+                        bottom: false,
+                        child: CustomScrollView(
+                          slivers: [
+                            SliverPadding(
+                              padding: const EdgeInsets.only(top: 48), // Space for floating status bar
+                              sliver: SliverToBoxAdapter(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
                                 // ── Preflight queue ──────────────────────────────
                             if (session.preflightQueue.isNotEmpty)
                               _FadeSlide(
@@ -170,7 +175,8 @@ class DashboardScreen extends ConsumerWidget {
                               ),
                           ],
                         ),
-                      ),
+                              ),
+                            ),
 
                       // ── Chat log fills remaining space ───────────────────
                       if (session.logs.any((l) => l.level != AgentLogLevel.error) &&
@@ -187,20 +193,82 @@ class DashboardScreen extends ConsumerWidget {
 
                       // Bottom padding so chat doesn't touch the start of the bar
                       const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
-                    ],
-                  ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                ),
 
                 // ── Solid bottom input area ──────────────────────────────────
                 // Matches the style of the bottom navigation bar
                 _BottomBar(session: session, actions: actions, ref: ref),
+
+                    ],
+                  ),
+                ),
+
+                // ── Floating Status Hub ──────────────────────────────────────
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 4, left: 16, right: 16),
+                      child: SizedBox(
+                        height: 32,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(child: Align(alignment: Alignment.centerLeft, child: _FloatingStatusBar(session: session))),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Transform.scale(
+                                  scale: 0.75,
+                                  child: IconButton(
+                                    padding: EdgeInsets.zero,
+                                    onPressed: () {
+                                      RestartWidget.restartApp(context);
+                                    },
+                                    icon: Icon(Icons.refresh, color: cli.textDim),
+                                    tooltip: 'Restart App',
+                                  ),
+                                ),
+                                Transform.scale(
+                                  scale: 0.75,
+                                  child: const DaemonStatusBar(),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           );
         },
       ),
+    );
+  }
+}
+
+// ── Floating Status Bar ──────────────────────────────────────────────────────
+class _FloatingStatusBar extends ConsumerWidget {
+  final SessionState session;
+  const _FloatingStatusBar({required this.session});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Row(
+      children: [
+        // Status Badge
+        SessionStatusBadge(status: session.status, currentTask: session.currentTask),
+        const Spacer(),
+      ],
     );
   }
 }
