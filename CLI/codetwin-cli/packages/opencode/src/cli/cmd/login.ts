@@ -177,7 +177,8 @@ export const RemoteLoginCommand = cmd({
     UI.empty()
     UI.println(UI.Style.TEXT_SUCCESS_BOLD + "Pairing complete." + UI.Style.TEXT_NORMAL)
     UI.println(UI.Style.TEXT_DIM + `Credentials saved to ${getRemoteBridgeStatePath()}` + UI.Style.TEXT_NORMAL)
-    UI.println(UI.Style.TEXT_INFO_BOLD + "Next step:" + UI.Style.TEXT_NORMAL + " codetwin worker")
+    const nextStep = process.platform === "win32" ? ".\\codetwin.cmd worker" : "codetwin worker"
+    UI.println(UI.Style.TEXT_INFO_BOLD + "Next step:" + UI.Style.TEXT_NORMAL + ` ${nextStep}`)
 
     if (args["show-token"]) {
       UI.println(UI.Style.TEXT_WARNING + `Worker token: ${workerToken}` + UI.Style.TEXT_NORMAL)

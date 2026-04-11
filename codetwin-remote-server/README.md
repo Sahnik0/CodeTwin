@@ -172,9 +172,15 @@ Accepted credential transport:
 
 ## Normal End-User Flow
 
-1. CLI device: codetwin login <bridge-url>
+1. CLI device: run login
+  - Windows (repo local): .\\CLI\\codetwin.cmd login <bridge-url>
+  - Linux/macOS (repo local): ./CLI/codetwin login <bridge-url>
+  - One-liner install users: codetwin login <bridge-url>
 2. Mobile app: complete pairing with code shown by CLI
-3. CLI device: codetwin worker
+3. CLI device: start worker
+  - Windows (repo local): .\\CLI\\codetwin.cmd worker
+  - Linux/macOS (repo local): ./CLI/codetwin worker
+  - One-liner install users: codetwin worker
 4. Mobile app connects and runs tasks
 
 Users do not need to manually provide REMOTE_EXEC_TOKEN in this flow.

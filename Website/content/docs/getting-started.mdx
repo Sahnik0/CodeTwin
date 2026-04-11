@@ -4,79 +4,107 @@ title: Getting Started
 
 # Getting Started
 
-CodeTwin is a terminal-first AI coding agent that runs on your machine. This guide walks you through installation, initialization, and your first task.
+CodeTwin is a terminal-first AI coding agent that runs on your machine. This guide covers installation, provider authentication, your first task, and mobile pairing.
 
 ## Installation
 
-Install CodeTwin globally via npm or the shell installer:
+### Linux/macOS one-liner
 
 ```bash
-curl -fsSL https://CodeTwin.dev/install.sh | bash
+curl -fsSL https://code-twin.vercel.app/install.sh | bash
 ```
 
-Or with npm:
+Open a new terminal, then verify:
 
 ```bash
-npm install -g CodeTwin
+codetwin --help
 ```
 
-After installation, verify with:
+### Source install (Windows, Linux, macOS)
 
 ```bash
-CodeTwin --version
+git clone https://github.com/Sahnik0/CodeTwin.git
+cd CodeTwin
 ```
 
-## Init wizard
-
-Inside your project directory, run the initialization wizard:
+Run the launcher from the repository:
 
 ```bash
-cd your-project
-CodeTwin config init
+./CLI/codetwin --help
 ```
 
-The wizard will prompt you for:
+Windows equivalent:
 
-- **LLM provider** — choose from OpenAI, Anthropic, Groq, Gemini, Mistral, Ollama, Azure, and others
-- **Model** — the specific model to use for that provider
-- **API key** — stored locally in `~/.CodeTwin/config.json`, never uploaded
-- **Dependence level** — how autonomous the agent should be (1–5, default 3)
+```powershell
+.\CLI\codetwin.cmd --help
+```
 
-Config is written to `.CodeTwin/config.json` in your project root. You can edit it directly at any time.
+## Provider authentication
+
+Authenticate a provider and verify saved credentials:
+
+```bash
+codetwin providers login
+codetwin providers list
+```
+
+List available models for a provider:
+
+```bash
+codetwin models openai
+```
 
 ## First task
 
-Start the CodeTwin TUI:
+Interactive TUI:
 
 ```bash
-CodeTwin start
+codetwin
 ```
 
-This opens the interactive terminal UI. Type a task in natural language:
+One-shot command mode:
 
-```
-refactor auth module to use JWT
-```
-
-CodeTwin will:
-
-1. Analyze the codebase
-2. Build a pre-flight impact map
-3. Show you exactly what will change
-4. Ask for approval (depending on your dependence level)
-5. Execute and record the decision to twin memory
-
-## Project configuration
-
-The `.CodeTwin/config.json` file controls per-project settings:
-
-```json
-{
-  "llmProvider": "anthropic",
-  "model": "claude-opus-4-5",
-  "apiKey": "sk-...",
-  "dependenceLevel": 3
-}
+```bash
+codetwin run "refactor auth module to use JWT"
 ```
 
-Global defaults live in `~/.CodeTwin/config.json`. Project config overrides global.
+Override autonomy for a single run:
+
+```bash
+codetwin run "add tests for auth middleware" --dependence-level 3
+```
+
+## Mobile pairing and worker
+
+Pair this CLI device with a bridge:
+
+```bash
+codetwin login https://codetwin-1quv.onrender.com
+```
+
+Then:
+
+1. Copy the 12-character pairing code printed in terminal.
+2. Open mobile app Pair screen.
+3. Enter the same bridge URL and code.
+4. Start worker:
+
+```bash
+codetwin worker
+```
+
+For local source installs, use the repo launcher variants:
+
+- Windows: .\CLI\codetwin.cmd login ... and .\CLI\codetwin.cmd worker
+- Linux/macOS: ./CLI/codetwin login ... and ./CLI/codetwin worker
+
+## Config locations
+
+CodeTwin reads config from standard project/global locations, including:
+
+- codetwin.json or codetwin.jsonc
+- .codetwin directory in your repository hierarchy
+- your OS global config directory
+
+Use the same command everywhere; only the launcher path differs by installation method.
+

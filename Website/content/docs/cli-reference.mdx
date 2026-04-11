@@ -4,100 +4,145 @@ title: CLI Reference
 
 # CLI Reference
 
-## CodeTwin start
+This page covers the current top-level codetwin commands.
 
-Start the interactive TUI.
+## Core usage
+
+Start interactive TUI in current directory:
 
 ```bash
-CodeTwin start [--daemon] [--level <1-5>]
+codetwin
 ```
 
-Options:
-- `--daemon` — also start the background daemon for remote control
-- `--level` — override the configured dependence level for this session
-
-## CodeTwin task
-
-Run a single task non-interactively.
+Start in a specific project path:
 
 ```bash
-CodeTwin task "<description>" [--level <1-5>] [--yes]
+codetwin /path/to/project
 ```
 
-- `--yes` — auto-approve all pre-flight maps (equivalent to level 5 for this task)
-
-## CodeTwin config init
-
-Run the interactive configuration wizard.
+Run a one-shot task:
 
 ```bash
-CodeTwin config init
+codetwin run [message..]
 ```
 
-## CodeTwin config show
-
-Print the current effective configuration (project + global merged).
+Attach to an existing server:
 
 ```bash
-CodeTwin config show
+codetwin attach [url]
 ```
 
-## CodeTwin level
+## Remote bridge
 
-Change the dependence level for the current project.
+Pair with bridge URL:
 
 ```bash
-CodeTwin level <1-5>
+codetwin login [url]
 ```
 
-## CodeTwin memory show
-
-Display the twin memory profile for the current project.
+Start worker:
 
 ```bash
-CodeTwin memory show
+codetwin worker [url]
 ```
 
-## CodeTwin memory reset
-
-Clear all twin memory for the current project.
+Local pairing host flow:
 
 ```bash
-CodeTwin memory reset [--yes]
+codetwin pair host
 ```
 
-## CodeTwin connect
+## Providers and models
 
-Show the device ID and QR code for mobile pairing. Starts the daemon if not running.
+List credentials and env-backed providers:
 
 ```bash
-CodeTwin connect
+codetwin providers list
 ```
 
-## CodeTwin relay
-
-Start a standalone relay server.
+Provider login/logout:
 
 ```bash
-CodeTwin relay [--port <port>]
+codetwin providers login [url]
+codetwin providers logout
 ```
 
-Default port: 7484.
-
-## CodeTwin version
-
-Print the installed version.
+List models:
 
 ```bash
-CodeTwin version
-# or
-CodeTwin --version
+codetwin models [provider]
 ```
 
-## CodeTwin help
+## Sessions and exports
 
-Print the full help text.
+Manage sessions:
 
 ```bash
-CodeTwin help [command]
+codetwin session list
+codetwin session create [title]
+codetwin session fork <sessionID>
+codetwin session delete <sessionID>
+```
+
+Usage and history:
+
+```bash
+codetwin stats
+codetwin export [sessionID]
+codetwin import <file>
+```
+
+## Integrations and servers
+
+Model Context Protocol commands:
+
+```bash
+codetwin mcp
+```
+
+Agent Client Protocol server:
+
+```bash
+codetwin acp
+```
+
+Headless and web modes:
+
+```bash
+codetwin serve
+codetwin web
+```
+
+GitHub helpers:
+
+```bash
+codetwin github
+codetwin pr <number>
+```
+
+## Maintenance
+
+Upgrade/uninstall:
+
+```bash
+codetwin upgrade [target]
+codetwin uninstall
+```
+
+Database and debug tools:
+
+```bash
+codetwin db
+codetwin debug
+```
+
+## Global flags
+
+Available on all commands:
+
+```bash
+--help
+--version
+--print-logs
+--log-level <DEBUG|INFO|WARN|ERROR>
 ```

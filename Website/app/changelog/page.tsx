@@ -27,7 +27,7 @@ v0.3.0 — 2026-02-10
 - Constraints system: add/remove/list active rules
 - Decision recording with reason tracking
 - CodeTwin memory show / reset commands
-- Breaking: config format updated — run CodeTwin config init to migrate
+- Breaking: config format updated — migrate project/global codetwin config files before upgrading
 
 v0.2.0 — 2026-01-20
 ────────────────────
@@ -62,7 +62,7 @@ export default function ChangelogPage() {
 
         <div className="mt-12 pt-8 border-t border-border-default">
           <a
-            href="https://github.com/CodeTwin/CodeTwin/releases"
+            href="https://github.com/Sahnik0/CodeTwin/releases"
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs text-text-muted hover:text-text-secondary transition-colors"

@@ -4,62 +4,44 @@ title: Twin Memory
 
 # Twin Memory
 
-CodeTwin maintains a twin profile per project. It is stored locally in a SQLite database at `.CodeTwin/memory.db`. Nothing is sent to any remote server.
+CodeTwin tracks execution context and learned patterns locally so future runs can stay consistent with prior decisions and constraints.
+
+Memory is stored in the local CodeTwin SQLite data store on your machine.
 
 ## What gets stored
 
-### Decisions
+CodeTwin memory graph includes node types such as:
 
-Every time CodeTwin makes a significant architectural or implementation choice — or you override one — it records:
+- decision
+- constraint
+- failure
+- task
+- file
+- context
 
-- What was chosen
-- What the alternatives were
-- The reason (if provided or inferred)
-- The timestamp
+This supports better continuity across sessions.
 
-### Constraints
+## How it is used
 
-Active constraints are rules CodeTwin must respect in all future tasks:
+- Reuses prior implementation context for similar tasks.
+- Preserves user/team preferences across runs.
+- Avoids repeating known failure paths.
+- Improves consistency of edits in the same project.
 
-- No specific library (`no lodash`)
-- Package manager preference (`use pnpm, not npm`)
-- Type safety rules (`no any types`)
+## Inspecting related data
 
-Add a constraint at any time:
-
-```
-/constraint "no lodash — tree-shaking issues"
-```
-
-### Failure patterns
-
-When a task fails or is rolled back, CodeTwin records:
-
-- The operation that failed
-- The file or module involved
-- The error context
-- Whether it was a known or unknown failure
-
-This prevents the agent from repeating the same mistake in future sessions.
-
-## Viewing memory
-
-From the TUI, type `/memory` to view the current project's twin profile.
-
-From the CLI:
+While there is no dedicated memory show/reset top-level command in this build, you can inspect related session history and usage with:
 
 ```bash
-CodeTwin memory show
+codetwin session list
+codetwin export [sessionID]
+codetwin stats
 ```
 
-## Resetting memory
+## Privacy
 
-```bash
-CodeTwin memory reset
-```
+Memory and credentials are stored locally by default. Keep repository-level config in source control if desired, and keep secrets in local credential storage or environment variables.
 
-This clears all decisions, constraints, and failure patterns for the current project. Irreversible.
+## Operational tip
 
-## Storage location
-
-Memory lives in `.CodeTwin/memory.db` relative to your project root. It is safe to commit to version control — it contains no secrets. Add it to `.gitignore` if you prefer not to share project memory with teammates.
+Use separate projects or sessions when you want strict context separation between different codebases.

@@ -4,102 +4,67 @@ title: Providers
 
 # Providers
 
-CodeTwin supports every major LLM provider through a unified config interface. Change the provider and model with no code changes.
+CodeTwin supports major LLM providers through a unified auth and model-selection flow.
 
-## Configuration
+## Authenticate a provider
 
-Set your provider in `.CodeTwin/config.json`:
+Start interactive login:
 
-```json
-{
-  "llmProvider": "groq",
-  "model": "llama-3.3-70b-versatile",
-  "apiKey": "gsk_..."
-}
+```bash
+codetwin providers login
 ```
 
-## OpenAI
+Skip prompt with a provider id:
 
-```json
-{
-  "llmProvider": "openai",
-  "model": "gpt-4o",
-  "apiKey": "sk-..."
-}
+```bash
+codetwin providers login --provider openai
 ```
 
-Supported models: `gpt-4o`, `gpt-4o-mini`, `gpt-4-turbo`, `o1`, `o3-mini`
+List currently available credentials:
 
-## Anthropic
-
-```json
-{
-  "llmProvider": "anthropic",
-  "model": "claude-opus-4-5",
-  "apiKey": "sk-ant-..."
-}
+```bash
+codetwin providers list
 ```
 
-Supported models: `claude-opus-4-5`, `claude-sonnet-4-5`, `claude-haiku-3-5`
+Log out from a provider credential:
 
-## Groq
-
-```json
-{
-  "llmProvider": "groq",
-  "model": "llama-3.3-70b-versatile",
-  "apiKey": "gsk_..."
-}
+```bash
+codetwin providers logout
 ```
 
-Groq runs inference at high speed. Recommended for development iteration loops. Supported models: `llama-3.3-70b-versatile`, `mixtral-8x7b-32768`, `gemma2-9b-it`
+## Discover models
 
-## Google Gemini
+List models for all providers:
 
-```json
-{
-  "llmProvider": "gemini",
-  "model": "gemini-2.0-flash",
-  "apiKey": "AIza..."
-}
+```bash
+codetwin models
 ```
 
-## Ollama (local)
+List models for one provider:
 
-Run models locally with no API key required:
-
-```json
-{
-  "llmProvider": "ollama",
-  "model": "llama3.2",
-  "baseUrl": "http://localhost:11434"
-}
+```bash
+codetwin models anthropic
 ```
 
-Start Ollama before running CodeTwin: `ollama serve`
+## Choose model at run time
 
-## Azure OpenAI
+Pass model explicitly using provider/model format:
 
-```json
-{
-  "llmProvider": "azure",
-  "model": "gpt-4o",
-  "apiKey": "...",
-  "azureEndpoint": "https://your-resource.openai.azure.com",
-  "azureDeployment": "your-deployment-name",
-  "azureApiVersion": "2024-02-01"
-}
+```bash
+codetwin run "summarize this codebase" --model openai/gpt-4o-mini
 ```
 
-## Others
+## Credential storage
 
-Any provider with an OpenAI-compatible API can be configured using the `openai-compatible` provider type:
+Provider credentials are stored locally on your machine in CodeTwin data/config directories.
 
-```json
-{
-  "llmProvider": "openai-compatible",
-  "model": "your-model",
-  "apiKey": "...",
-  "baseUrl": "https://your-api-endpoint.com/v1"
-}
-```
+Use environment variables when needed; codetwin providers list also shows env-backed credentials currently detected.
+
+## Config files
+
+CodeTwin reads config from supported project/global locations, including:
+
+- codetwin.json or codetwin.jsonc
+- .codetwin directory in your repository tree
+
+This lets teams keep project defaults in-repo while each developer keeps private credentials local.

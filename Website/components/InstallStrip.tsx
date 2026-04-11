@@ -8,7 +8,7 @@ interface InstallStripProps {
 }
 
 export default function InstallStrip({
-  command = 'curl -fsSL https://CodeTwin.dev/install.sh | bash',
+  command = 'curl -fsSL https://code-twin.vercel.app/install.sh | bash',
 }: InstallStripProps) {
   const [copied, setCopied] = useState(false)
 

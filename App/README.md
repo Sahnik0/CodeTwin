@@ -1,50 +1,56 @@
 # CodeTwin Mobile App
 
-## Pairing And Run Guide
+This Flutter app pairs with the CodeTwin CLI worker through the remote bridge.
 
-This app connects to a remote CodeTwin bridge and a CLI worker.
+For full setup (CLI + app + direct installer), see the root guide:
 
-### Normal user flow (hosted bridge)
+- ../README.md
 
-Use this with a hosted URL, for example:
+## Quick Pairing Flow
+
+Bridge URL example:
 
 - https://codetwin-1quv.onrender.com
 
-1. In CLI terminal:
-	.\codetwin.cmd login https://codetwin-1quv.onrender.com
-2. Copy the 12-character pairing code shown by CLI.
-3. In app Pair screen, enter:
-	- Server URL: https://codetwin-1quv.onrender.com
-	- Pairing code: code from CLI
-4. Tap Pair Device.
-5. Start worker:
-	.\codetwin.cmd worker
-6. Run app:
-	flutter run
+### Windows
 
-After first pairing, you usually only need steps 5 and 6.
+```powershell
+.\CLI\codetwin.cmd login https://codetwin-1quv.onrender.com
+```
 
-### Do users need REMOTE_EXEC_TOKEN?
+### Linux/macOS
 
-No, not for normal pairing.
+```bash
+./CLI/codetwin login https://codetwin-1quv.onrender.com
+```
 
-The login + pairing flow automatically creates and stores scoped credentials:
+In the app Pair screen:
 
-- App stores client token securely.
-- CLI stores worker token in its remote bridge state.
+1. Enter bridge URL.
+2. Enter the 12-character code from CLI.
+3. Tap Pair Device.
 
-### When to re-run login
+Start worker:
 
-Run login again if:
+- Windows: .\CLI\codetwin.cmd worker
+- Linux/macOS: ./CLI/codetwin worker
+- One-liner install users: codetwin worker
 
-- token expired,
-- bridge URL changed,
-- stored credentials were cleared.
+Run app:
 
-Then start worker again.
+```bash
+flutter pub get
+flutter run
+```
+
+## Token Notes
+
+REMOTE_EXEC_TOKEN is not required for normal user pairing.
+
+Pairing auto-issues and stores scoped client/worker tokens.
 
 ## Troubleshooting
 
-- Worker not connecting: run .\codetwin.cmd worker from the CLI folder and check terminal output.
-- App returns to Pair screen: token likely expired or pairing was cleared; run login again.
-- Bridge mismatch: ensure app server URL and worker bridge URL are from the same environment.
+- Pairing code expired: run login again.
+- Worker offline: restart worker command for your OS.
+- App returns to Pair screen: credentials likely expired/cleared, pair again.

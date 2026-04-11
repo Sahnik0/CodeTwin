@@ -4,35 +4,41 @@ title: Remote Control
 
 # Remote Control
 
-CodeTwin supports remote control via an end-to-end encrypted relay. You can submit tasks, approve pre-flight maps, and watch the agent log stream from your phone.
+CodeTwin supports remote control through a bridge workflow. You can pair a mobile app with a CLI device and execute tasks through a worker connection.
 
-## Setup
+## Hosted bridge flow (recommended)
 
-The remote control feature requires the CodeTwin mobile app (iOS / Android) and the desktop daemon to be running.
-
-Start CodeTwin with the daemon enabled:
+1. Pair CLI with bridge:
 
 ```bash
-CodeTwin start --daemon
+codetwin login https://codetwin-1quv.onrender.com
 ```
 
-Or enable it in config:
+2. Enter the pairing code in the mobile app Pair screen.
+3. Start worker:
 
-```json
-{
-  "daemon": true,
-  "daemonPort": 7483
-}
+```bash
+codetwin worker
 ```
 
-## Mobile pairing
+For local source installs, use your launcher path:
 
-1. Open the CodeTwin mobile app
-2. Tap "Pair a device"
-3. Scan the QR code shown by running `CodeTwin connect` in your terminal — or visit `/connect` in a browser on the same machine
-4. Confirm the pairing on both devices
+- Windows: .\CLI\codetwin.cmd login ... and .\CLI\codetwin.cmd worker
+- Linux/macOS: ./CLI/codetwin login ... and ./CLI/codetwin worker
 
-The device ID is derived from a random 64-bit token generated on first run. It is stored in `.CodeTwin/daemon.port`.
+## Local pairing host flow (advanced)
+
+You can host a local pairing session and share a secure pair code:
+
+```bash
+codetwin pair host
+```
+
+Join from another client with:
+
+```bash
+codetwin attach --pair-code <pair-code>
+```
 
 ## What you can do remotely
 
@@ -42,22 +48,17 @@ The device ID is derived from a random 64-bit token generated on first run. It i
 - Cancel a running task
 - Change the dependence level mid-task
 
-## Relay server
+## Security model
 
-CodeTwin uses a relay server to bridge the desktop daemon and the mobile app through NAT/firewalls. The relay is a stateless message forwarder — it never stores your code, file contents, or task details.
+- Pairing codes are short-lived and one-time use.
+- Worker credentials are stored locally on the CLI device.
+- Mobile app stores its own scoped client credential.
 
-Messages are end-to-end encrypted using a shared key derived from the device pairing handshake (ECDH + AES-256-GCM).
+Normal users do not need to manually supply REMOTE_EXEC_TOKEN for this flow.
 
-You can run your own relay:
+## Troubleshooting
 
-```bash
-CodeTwin relay --port 7484
-```
+- Pairing code expired: run login again to generate a new code.
+- Worker not connecting: verify the same bridge URL is used for both app and CLI.
+- Credentials stale: re-run login, then restart worker.
 
-And point clients to it in config:
-
-```json
-{
-  "relayUrl": "wss://your-relay.example.com"
-}
-```
