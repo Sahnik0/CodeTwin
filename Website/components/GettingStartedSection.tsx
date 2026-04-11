@@ -1,6 +1,16 @@
 'use client'
 
-import { motion, useInView, useScroll, useVelocity, useSpring, useTransform } from 'framer-motion'
+import {
+  motion,
+  useInView,
+  useScroll,
+  useVelocity,
+  useSpring,
+  useTransform,
+  useMotionValue,
+  useAnimationFrame,
+  useReducedMotion,
+} from 'framer-motion'
 import Image from 'next/image'
 import { Download, Settings, Play, Check } from 'lucide-react'
 import InstallStrip from './InstallStrip'
@@ -39,18 +49,18 @@ interface GitHubContributor {
   contributions: number
 }
 
-interface GitHubContributorStats {
-  total: number
-  author: {
-    id: number
-    login: string
-    avatar_url: string
-    html_url: string
-  } | null
+interface ContributorsApiResponse {
+  contributors: GitHubContributor[]
+  source: 'stats' | 'contributors' | 'fallback'
 }
 
 const easeOut = [0.16, 1, 0.3, 1] as const
 const CONTRIBUTORS_REFRESH_INTERVAL_MS = 60_000
+const MARQUEE_TEXT = 'Terminal First · Local First · Zero Telemetry · '
+const MARQUEE_BASE_SPEED = 0.0012
+const MARQUEE_BOOST_CAP = 0.08
+const MARQUEE_BOOST_DIVISOR = 6000
+const MARQUEE_BOOST_MULTIPLIER = 0.0032
 
 export default function GettingStartedSection() {
   const [contributors, setContributors] = useState<GitHubContributor[]>([])
@@ -58,16 +68,32 @@ export default function GettingStartedSection() {
 
   const sectionRef = useRef<HTMLElement>(null);
   const isSectionInView = useInView(sectionRef, { margin: '-20% 0px -20% 0px' })
+  const prefersReducedMotion = useReducedMotion()
   
   const { scrollY } = useScroll();
-  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start end", "end start"] });
-  
-  // Adjusted pixel offset delta to increase marquee speed per user request
-  const baseX = useTransform(scrollYProgress, [0, 1], [50, -2000]);
   const scrollVelocity = useVelocity(scrollY);
   const smoothVelocity = useSpring(scrollVelocity, { damping: 50, stiffness: 400 });
   const skewVelocity = useTransform(smoothVelocity, [-1000, 1000], [-8, 8]);
   const skewX = useTransform(skewVelocity, (v) => `${v}deg`);
+  const marqueeX = useMotionValue(0)
+  const marqueeXPercent = useTransform(marqueeX, (v) => `${v}%`)
+  const speedBoost = useTransform(smoothVelocity, (v) => Math.min(MARQUEE_BOOST_CAP, Math.abs(v) / MARQUEE_BOOST_DIVISOR))
+
+  useAnimationFrame((_, delta) => {
+    if (!isSectionInView || prefersReducedMotion) {
+      return
+    }
+
+    const deltaX = (MARQUEE_BASE_SPEED + speedBoost.get() * MARQUEE_BOOST_MULTIPLIER) * delta
+    let next = marqueeX.get() - deltaX
+
+    // Keep translation in a tight loop so the first phrase stays readable.
+    if (next <= -50) {
+      next += 50
+    }
+
+    marqueeX.set(next)
+  })
 
   useEffect(() => {
     if (!isSectionInView) {
@@ -78,32 +104,14 @@ export default function GettingStartedSection() {
 
     const fetchContributors = async () => {
       try {
-        const response = await fetch(
-          `https://api.github.com/repos/Sahnik0/CodeTwin/stats/contributors?t=${Date.now()}`,
-          { cache: 'no-store' }
-        )
-
-        if (response.status === 202) {
-          return
-        }
+        const response = await fetch(`/api/contributors?t=${Date.now()}`, { cache: 'no-store' })
 
         if (!response.ok) {
           return
         }
 
-        const data: GitHubContributorStats[] = await response.json()
-
-        const topContributors = data
-          .filter((entry): entry is GitHubContributorStats & { author: NonNullable<GitHubContributorStats['author']> } => Boolean(entry.author))
-          .map((entry) => ({
-            id: entry.author.id,
-            login: entry.author.login,
-            avatar_url: entry.author.avatar_url,
-            html_url: entry.author.html_url,
-            contributions: entry.total,
-          }))
-          .sort((a, b) => b.contributions - a.contributions)
-          .slice(0, 5)
+        const data = (await response.json()) as ContributorsApiResponse
+        const topContributors = Array.isArray(data?.contributors) ? data.contributors : []
 
         if (isMounted && topContributors.length > 0) {
           setContributors(topContributors)
@@ -131,11 +139,17 @@ export default function GettingStartedSection() {
     <section ref={sectionRef} className="relative py-28 px-6 border-t border-border-default overflow-hidden">
       {/* Massive Background Marquee */}
       <motion.div 
-        style={{ x: baseX, skewX }}
+        style={{ x: marqueeXPercent, skewX }}
         className="absolute top-1/2 -translate-y-1/2 flex whitespace-nowrap pointer-events-none opacity-5 mix-blend-plus-lighter z-0 left-0"
       >
-        <span className="text-[180px] md:text-[240px] font-black tracking-tighter uppercase text-[#a6a6ed]">
-          Terminal First · Local First · Zero Telemetry · Terminal First · Local First · Zero Telemetry ·
+        <span className="text-[160px] md:text-[220px] font-black tracking-tighter uppercase text-[#a6a6ed] pr-20">
+          {MARQUEE_TEXT.repeat(4)}
+        </span>
+        <span
+          aria-hidden="true"
+          className="text-[160px] md:text-[220px] font-black tracking-tighter uppercase text-[#a6a6ed] pr-20"
+        >
+          {MARQUEE_TEXT.repeat(4)}
         </span>
       </motion.div>
 
@@ -258,7 +272,9 @@ export default function GettingStartedSection() {
                       <p className="text-sm font-medium text-text-primary group-hover:text-[#a6a6ed] transition-colors">
                         {person.login}
                       </p>
-                      <p className="text-xs text-text-muted">{person.contributions} contributions</p>
+                      <p className="text-xs text-text-muted">
+                        {person.contributions} contribution{person.contributions === 1 ? '' : 's'}
+                      </p>
                     </div>
                   </a>
                 ))}
