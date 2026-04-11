@@ -1,0 +1,75 @@
+---
+title: Mobile Connection
+---
+
+# Mobile Connection
+
+Mobile connection is a core CodeTwin differentiator. Your laptop runs the agent, and your phone acts as the remote control surface for tasks, approvals, and live execution visibility.
+
+## What mobile connection enables
+
+- Submit tasks remotely
+- Approve or reject pre-flight maps
+- Respond to agent decision prompts
+- Watch live logs while tasks run
+- Cancel active runs
+- Adjust dependence level mid-task
+
+## Prerequisites
+
+- CodeTwin CLI installed and running
+- Mobile app installed
+- Same bridge URL used in both CLI and app
+- CLI device online while remote session is active
+
+## Hosted bridge flow (recommended)
+
+1. Generate a pairing code on the CLI device:
+
+```bash
+codetwin login https://codetwin-1quv.onrender.com
+```
+
+2. Copy the 12-character pairing code from terminal.
+3. Open the mobile app Pair screen.
+4. Enter the same bridge URL and code.
+5. Start the worker:
+
+```bash
+codetwin worker
+```
+
+6. Confirm the app shows the CLI device as connected.
+
+For local source installs, use repo launchers:
+
+- Windows: .\CLI\codetwin.cmd login ... and .\CLI\codetwin.cmd worker
+- Linux/macOS: ./CLI/codetwin login ... and ./CLI/codetwin worker
+
+## QR flow (faster pairing)
+
+If you prefer scanning over manual code entry:
+
+1. On the laptop running the CLI daemon, open https://code-twin.vercel.app/connect.
+2. Scan the QR code from your phone.
+3. Confirm pairing in the mobile app.
+4. Run worker if not already running.
+
+## Security notes
+
+- Pairing codes are short-lived and one-time use.
+- Worker credentials remain on the CLI device.
+- Mobile app stores a scoped credential for the paired session.
+
+## Troubleshooting
+
+- Pairing code expired: run login again to generate a fresh code.
+- App not connecting: ensure bridge URL matches exactly on both sides.
+- Worker offline: start or restart codetwin worker.
+- No remote updates: verify laptop internet connectivity and keep worker running.
+
+## Related docs
+
+- [Getting Started](/docs/getting-started)
+- [Remote Control](/docs/remote-control)
+- [CLI Reference](/docs/cli-reference)

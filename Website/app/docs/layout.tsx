@@ -30,6 +30,7 @@ const navItems = [
   {
     group: 'Remote control',
     items: [
+      { label: 'Mobile connection', slug: 'mobile-connection' },
       { label: 'Setup', slug: 'remote-control' },
     ],
   },
