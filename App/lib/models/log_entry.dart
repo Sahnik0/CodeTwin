@@ -1,6 +1,8 @@
 import 'session_status.dart';
 import 'preflight_map.dart';
 
+enum LogSource { local, structured, raw }
+
 /// A single log line from the agent.
 class LogEntry {
   final String id;
@@ -8,6 +10,8 @@ class LogEntry {
   final String message;
   final String? toolName;
   final String timestamp;
+  final LogSource source;
+  final String? structuredType;
 
   const LogEntry({
     required this.id,
@@ -15,6 +19,8 @@ class LogEntry {
     required this.message,
     this.toolName,
     required this.timestamp,
+    this.source = LogSource.structured,
+    this.structuredType,
   });
 }
 

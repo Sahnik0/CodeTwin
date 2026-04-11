@@ -133,6 +133,25 @@ class _LogRow extends StatelessWidget {
               ),
             ),
           ),
+          if (entry.source == LogSource.raw) ...[
+            const SizedBox(width: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                color: Colors.cyan.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(3),
+              ),
+              child: const Text(
+                'RAW',
+                style: TextStyle(
+                  color: Colors.cyan,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ),
+          ],
           const SizedBox(width: 6),
           // Tool name
           if (entry.toolName != null) ...[

@@ -14,10 +14,36 @@ It provides:
 
 ## Start
 
-1. Go to this folder.
-2. Start with a token.
+### Recommended (pairing-enabled)
 
-REMOTE_EXEC_TOKEN=replace-me bun run server.ts
+Set a signing secret and start:
+
+PowerShell:
+
+$env:REMOTE_EXEC_SIGNING_SECRET="replace-me"
+bun run server.ts
+
+Bash:
+
+REMOTE_EXEC_SIGNING_SECRET=replace-me bun run server.ts
+
+This enables:
+
+- POST /pair/cli/start
+- POST /pair/cli/poll
+- POST /pair/mobile/complete
+
+### Optional admin token mode
+
+If you also set REMOTE_EXEC_TOKEN, that token can be used for admin-style direct requests.
+
+PowerShell:
+
+$env:REMOTE_EXEC_TOKEN="replace-me"
+
+Bash:
+
+REMOTE_EXEC_TOKEN=replace-me
 
 Defaults:
 
@@ -27,12 +53,16 @@ Defaults:
 
 ## Environment
 
-- REMOTE_EXEC_TOKEN: bearer or query token
+- REMOTE_EXEC_SIGNING_SECRET: enables secure CLI+mobile pairing and signs pair tokens
+- REMOTE_EXEC_PAIRING_SECRET: legacy alias for REMOTE_EXEC_SIGNING_SECRET
+- REMOTE_EXEC_TOKEN: optional admin bearer/query token (not required for normal pairing flow)
 - REMOTE_EXEC_HOST: bind host (default 0.0.0.0)
 - REMOTE_EXEC_PORT: bind port (default 8787)
 - REMOTE_EXEC_SHELL: shell path (default /bin/bash)
 - REMOTE_EXEC_MAX_LOGS: in-memory log chunks per job (default 4000)
 - REMOTE_EXEC_DEFAULT_CWD: default working dir when cwd is omitted
+- REMOTE_EXEC_PUBLIC_BASE_URL: public API base URL returned in pairing responses
+- REMOTE_EXEC_PUBLIC_WS_URL: public WS URL returned in pairing responses
 - CODETWIN_BIN: path to codetwin executable (default codetwin)
 
 ## HTTP API
@@ -108,7 +138,7 @@ GET /stream
 
 Connect:
 
-ws://HOST:PORT/ws?token=YOUR_TOKEN
+ws://HOST:PORT/ws?token=PAIR_OR_ADMIN_TOKEN
 
 Supported client messages:
 
@@ -122,11 +152,32 @@ The server pushes live events such as start, stdout, stderr, exit, and error.
 
 ## Auth
 
-If REMOTE_EXEC_TOKEN is set, provide one of:
+There are two credential types:
+
+1. Pair tokens (normal user flow)
+
+- Generated automatically by login + mobile pair.
+- Worker uses worker token.
+- Mobile app uses client token.
+
+2. Admin token (optional)
+
+- Only if REMOTE_EXEC_TOKEN is configured.
+
+Accepted credential transport:
 
 - Authorization: Bearer YOUR_TOKEN
 - X-Remote-Token: YOUR_TOKEN
 - query string token=YOUR_TOKEN
+
+## Normal End-User Flow
+
+1. CLI device: codetwin login <bridge-url>
+2. Mobile app: complete pairing with code shown by CLI
+3. CLI device: codetwin worker
+4. Mobile app connects and runs tasks
+
+Users do not need to manually provide REMOTE_EXEC_TOKEN in this flow.
 
 ## Mobile app recommendation
 

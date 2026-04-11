@@ -4,6 +4,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../constants/execution_profile.dart';
 import '../models/agent_message.dart';
 import '../models/log_entry.dart';
 import '../models/session_status.dart';
@@ -54,11 +55,15 @@ class DaemonActions {
     debugPrint('[DaemonActions] activeJobId=${socketService.activeJobId}');
     // ────────────────────────────────────────────────────────────────────────
 
+        final level = session.dependenceLevel.clamp(1, 5).toInt();
+        final profile = executionProfileForLevel(level);
+
     ref.read(sessionProvider.notifier).appendLog(LogEntry(
           id: 'user_input_${DateTime.now().millisecondsSinceEpoch}',
           timestamp: DateTime.now().toIso8601String(),
           level: AgentLogLevel.info,
           message: '> Task: $task',
+          source: LogSource.local,
         ));
 
     if (!isDaemonConnected) {
@@ -68,6 +73,7 @@ class DaemonActions {
             timestamp: DateTime.now().toIso8601String(),
             level: AgentLogLevel.error,
             message: 'Failed to send task: Agent disconnected. Please connect the CLI daemon first.',
+            source: LogSource.local,
           ));
       return;
     }
@@ -79,9 +85,12 @@ class DaemonActions {
         task,
         '--dangerously-skip-permissions',
         '--dependence-level',
-        session.dependenceLevel.toString(),
+        level.toString(),
       ],
-      'env': {'CODETWIN_DEPENDENCE_LEVEL': session.dependenceLevel.toString()},
+      'env': {'CODETWIN_DEPENDENCE_LEVEL': level.toString()},
+      'interactive': profile.interactive,
+      'streamFormat': profile.streamFormat,
+      'thinking': profile.thinking,
     });
     
     // Immediately display 'running' rather than waiting for stdout, improving perceived latency.
@@ -117,8 +126,10 @@ class DaemonActions {
       );
 
   void changeLevel(int newLevel) {
-    if (session.status == SessionStatus.idle || session.status == SessionStatus.failed) return;
-    _send(MessageType.levelChange, {'newLevel': newLevel});
+    final level = newLevel.clamp(1, 5).toInt();
+    debugPrint(
+      '[DaemonActions] Level updated locally to $level (applies to next run)',
+    );
   }
 
   void ping() => _send(MessageType.ping, {});

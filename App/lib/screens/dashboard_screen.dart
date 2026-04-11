@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/log_entry.dart';
 import '../models/session_status.dart';
 import '../providers/session_provider.dart';
 import '../providers/daemon_actions_provider.dart';
@@ -182,14 +183,18 @@ class DashboardScreen extends ConsumerWidget {
 
                             // ── Chat log fills remaining space ───────────────────
                             if (session.logs
-                                    .any((l) => l.level != AgentLogLevel.error) &&
+                                    .any((l) =>
+                                        l.level != AgentLogLevel.error &&
+                                        l.source != LogSource.raw) &&
                                 session.preflightQueue.isEmpty &&
                                 session.decisionQueue.isEmpty)
                               SliverFillRemaining(
                                 hasScrollBody: true,
                                 child: ChatMessageList(
                                   logs: session.logs
-                                      .where((l) => l.level != AgentLogLevel.error)
+                                      .where((l) =>
+                                          l.level != AgentLogLevel.error &&
+                                          l.source != LogSource.raw)
                                       .toList(),
                                 ),
                               ),

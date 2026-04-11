@@ -7,8 +7,6 @@ class HistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     // History will be populated from daemon GET /sessions when connected.
     // For now, show an empty state.
     return Scaffold(

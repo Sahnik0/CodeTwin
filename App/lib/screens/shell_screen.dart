@@ -1,10 +1,7 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/session_provider.dart';
-import '../models/session_status.dart';
-import '../providers/daemon_actions_provider.dart';
 import '../theme/cli_theme.dart';
 import '../services/bridge_listener_service.dart';
 

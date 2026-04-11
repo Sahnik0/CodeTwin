@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/log_entry.dart';
 import '../models/session_status.dart';
-import '../utils/formatters.dart';
 import '../theme/cli_theme.dart';
 
 class ChatMessageList extends StatefulWidget {

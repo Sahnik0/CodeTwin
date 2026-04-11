@@ -7,16 +7,27 @@ enum BridgeEventType {
   start,
   stdout,
   stderr,
+  cliEvent,
   input,
   terminate,
   exit,
   error,
   subscribed,
   accepted,
+  pong,
   unknown,
 }
 
 BridgeEventType _parseBridgeType(String type) {
+  switch (type) {
+    case 'cli_event':
+      return BridgeEventType.cliEvent;
+    case 'pong':
+      return BridgeEventType.pong;
+    default:
+      break;
+  }
+
   for (final value in BridgeEventType.values) {
     if (value.name == type) return value;
   }
@@ -53,4 +64,12 @@ class BridgeEvent {
 
   /// Extracts error message for error events
   String? get message => raw['message'] as String?;
+
+  /// Extracts structured CLI event payload for cli_event events.
+  Map<String, dynamic>? get cliEvent {
+    final value = raw['event'];
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) return value.cast<String, dynamic>();
+    return null;
+  }
 }
